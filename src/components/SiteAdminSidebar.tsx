@@ -5,28 +5,100 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { useRole } from '@/context/RoleContext';
-import { LayoutDashboard, Users, GitBranch, Paintbrush, ShieldAlert, MapPin, MonitorSmartphone, UserCog, Moon, ChevronLeft, ChevronRight, LogOut, ChevronDown, ChevronUp, ClipboardList, Shield, BarChart2, Settings } from 'lucide-react';
+import { LayoutDashboard, List, Users, GitBranch, Paintbrush, ShieldAlert, MonitorSmartphone, UserCog, Moon, ChevronLeft, ChevronRight, LogOut, ChevronDown, ChevronUp, Shield, BarChart2, Settings, Bell, Plug, ClipboardList, Lock, DoorOpen, Building2, HelpCircle,  } from 'lucide-react';
 
 interface SiteAdminSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
 }
 
-const siteAdminNavItems = [
-  { id: 'sa-dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, href: '/site-admin/dashboard', group: 'CORE CONFIGURATION' },
-  { id: 'sa-visitor-types', label: 'Visitor Types', icon: <Users size={18} />, href: '/site-admin/visitor-types', group: 'CORE CONFIGURATION' },
-  { id: 'sa-induction', label: 'Induction Hub', icon: <Shield size={18} />, href: '/site-admin/induction', group: 'CORE CONFIGURATION' },
-  { id: 'sa-branding', label: 'Branding & Appearance', icon: <Paintbrush size={18} />, href: '/site-admin/branding', group: 'CORE CONFIGURATION' },
-  { id: 'sa-blacklist', label: 'Blacklist & Watchlists', icon: <ShieldAlert size={18} />, href: '/site-admin/blacklist', group: 'SECURITY & OPERATIONS' },
-  { id: 'sa-locations', label: 'Locations & Sites', icon: <MapPin size={18} />, href: '/site-admin/locations-sites', group: 'SECURITY & OPERATIONS' },
-  { id: 'sa-kiosks', label: 'Kiosks & Hardware', icon: <MonitorSmartphone size={18} />, href: '/site-admin/kiosks', group: 'SECURITY & OPERATIONS' },
-  { id: 'sa-users', label: 'Users & Permissions', icon: <UserCog size={18} />, href: '/site-admin/users-permissions', group: 'USERS & COMPLIANCE' },
-  { id: 'sa-reports', label: 'Reports & Analytics', icon: <BarChart2 size={18} />, href: '/site-admin/reports', group: 'USERS & COMPLIANCE' },
-  { id: 'sa-compliance', label: 'Compliance & Audit', icon: <ClipboardList size={18} />, href: '/site-admin/compliance', group: 'USERS & COMPLIANCE' },
-  { id: 'sa-settings', label: 'Settings', icon: <Settings size={18} />, href: '/site-admin/settings', group: 'USERS & COMPLIANCE' },
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  href: string;
+}
+
+interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    items: [
+      { id: 'sa-dashboard',     label: 'Dashboard',           icon: <LayoutDashboard size={18} />, href: '/site-admin/dashboard' },
+      { id: 'sa-visitor-logs',  label: 'Visitor Logs',        icon: <List size={18} />,            href: '/site-admin/visitor-logs' },
+    ],
+  },
+  {
+    id: 'visitor-config',
+    label: 'Visitor Configuration',
+    items: [
+      { id: 'sa-visitor-types', label: 'Visitor Types',       icon: <Users size={18} />,           href: '/site-admin/visitor-types' },
+      // Work Flows is injected separately as a parent item
+      { id: 'sa-induction',     label: 'Induction Hub',       icon: <Shield size={18} />,          href: '/site-admin/induction' },
+      { id: 'sa-branding',      label: 'Branding & Appearance', icon: <Paintbrush size={18} />,    href: '/site-admin/branding' },
+    ],
+  },
+  {
+    id: 'security-access',
+    label: 'Security & Access',
+    items: [
+      { id: 'sa-locations',     label: 'Locations & Sites',   icon: <Building2 size={18} />,       href: '/site-admin/locations-sites' },
+      { id: 'sa-gates',         label: 'Gates & Entry Points',icon: <DoorOpen size={18} />,        href: '/site-admin/gates' },
+      { id: 'sa-access-zones',  label: 'Access Zones',        icon: <Lock size={18} />,            href: '/site-admin/access-zones' },
+      { id: 'sa-kiosks',        label: 'Kiosks & Hardware',   icon: <MonitorSmartphone size={18} />, href: '/site-admin/kiosks' },
+      { id: 'sa-blacklist',     label: 'Blacklist & Watchlists', icon: <ShieldAlert size={18} />,  href: '/site-admin/blacklist' },
+    ],
+  },
+  {
+    id: 'users-integrations',
+    label: 'Users & Integrations',
+    items: [
+      { id: 'sa-users',         label: 'Users & Permissions', icon: <UserCog size={18} />,         href: '/site-admin/users-permissions' },
+      { id: 'sa-integrations',  label: 'Integrations',        icon: <Plug size={18} />,            href: '/site-admin/integrations' },
+      { id: 'sa-notifications', label: 'Notifications',       icon: <Bell size={18} />,            href: '/site-admin/notifications' },
+    ],
+  },
+  {
+    id: 'analytics-compliance',
+    label: 'Analytics & Compliance',
+    items: [
+      { id: 'sa-reports',       label: 'Reports & Analytics', icon: <BarChart2 size={18} />,       href: '/site-admin/reports' },
+      { id: 'sa-compliance',    label: 'Compliance & Audit',  icon: <ClipboardList size={18} />,   href: '/site-admin/compliance' },
+    ],
+  },
+  {
+    id: 'site-settings',
+    label: 'Site Settings',
+    items: [
+      { id: 'sa-site-profile',  label: 'Site Profile',        icon: <Building2 size={18} />,       href: '/site-admin/site-profile' },
+      { id: 'sa-retention',     label: 'Retention Policy',    icon: <ClipboardList size={18} />,   href: '/site-admin/settings' },
+      { id: 'sa-api-keys',      label: 'API Keys',            icon: <Settings size={18} />,        href: '/site-admin/settings' },
+    ],
+  },
 ];
 
-const groups = ['CORE CONFIGURATION', 'SECURITY & OPERATIONS', 'USERS & COMPLIANCE'];
+function NavItemRow({ item, collapsed, isActive }: { item: NavItem; collapsed: boolean; isActive: boolean }) {
+  return (
+    <Link href={item.href}>
+      <div
+        className={`relative flex items-center gap-3 mx-2 my-0.5 rounded-lg cursor-pointer transition-all duration-150
+          ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
+          ${isActive ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/70 hover:text-white'}`}
+        title={collapsed ? item.label : undefined}
+      >
+        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-primary-400" />}
+        <span className={`shrink-0 ${isActive ? 'text-primary-400' : ''}`}>{item.icon}</span>
+        {!collapsed && <span className="text-[13px] font-medium truncate flex-1">{item.label}</span>}
+      </div>
+    </Link>
+  );
+}
 
 export default function SiteAdminSidebar({ collapsed, onToggle }: SiteAdminSidebarProps) {
   const pathname = usePathname();
@@ -121,186 +193,143 @@ export default function SiteAdminSidebar({ collapsed, onToggle }: SiteAdminSideb
       )}
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-thin">
-        {groups.map((group) => {
-          const items = siteAdminNavItems.filter((i) => i.group === group);
-          return (
-            <div key={`group-${group}`} className="mb-1">
-              {!collapsed && (
-                <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  {group}
-                </p>
-              )}
-              {collapsed && (
-                <div className="my-1 mx-2 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
-              )}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 scrollbar-thin">
+        {navGroups.map((group, groupIndex) => (
+          <div key={group.id} className={groupIndex > 0 ? 'mt-1' : ''}>
+            {/* Group header */}
+            {!collapsed && (
+              <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                {group.label}
+              </p>
+            )}
+            {collapsed && groupIndex > 0 && (
+              <div className="my-1 mx-2 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+            )}
 
-              {/* Inject Work Flows expandable item in CORE CONFIGURATION */}
-              {group === 'CORE CONFIGURATION' && (
-                <div>
-                  {/* Dashboard */}
-                  {items.filter(i => i.id === 'sa-dashboard').map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                    return (
-                      <Link key={item.id} href={item.href}>
-                        <div
-                          className={`relative flex items-center gap-3 mx-2 my-0.5 rounded-lg cursor-pointer transition-all duration-150
-                            ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
-                            ${isActive ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/70 hover:text-white'}`}
-                          title={collapsed ? item.label : undefined}
-                        >
-                          {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-primary-400" />}
-                          <span className={`shrink-0 ${isActive ? 'text-primary-400' : ''}`}>{item.icon}</span>
-                          {!collapsed && <span className="text-[13px] font-medium truncate flex-1">{item.label}</span>}
-                        </div>
-                      </Link>
-                    );
-                  })}
+            {/* Visitor Configuration group: inject Work Flows after Visitor Types */}
+            {group.id === 'visitor-config' ? (
+              <>
+                {/* Visitor Types */}
+                {group.items.filter(i => i.id === 'sa-visitor-types').map(item => (
+                  <NavItemRow
+                    key={item.id}
+                    item={item}
+                    collapsed={collapsed}
+                    isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
+                  />
+                ))}
 
-                  {/* Visitor Types */}
-                  {items.filter(i => i.id === 'sa-visitor-types').map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                    return (
-                      <Link key={item.id} href={item.href}>
-                        <div
-                          className={`relative flex items-center gap-3 mx-2 my-0.5 rounded-lg cursor-pointer transition-all duration-150
-                            ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
-                            ${isActive ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/70 hover:text-white'}`}
-                          title={collapsed ? item.label : undefined}
-                        >
-                          {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-primary-400" />}
-                          <span className={`shrink-0 ${isActive ? 'text-primary-400' : ''}`}>{item.icon}</span>
-                          {!collapsed && <span className="text-[13px] font-medium truncate flex-1">{item.label}</span>}
-                        </div>
-                      </Link>
-                    );
-                  })}
-
-                  {/* Work Flows Parent */}
-                  <div
-                    onClick={() => { if (!collapsed) setWorkflowExpanded(prev => !prev); }}
-                    className={`
-                      relative flex items-center gap-3 mx-2 my-0.5 rounded-lg cursor-pointer
-                      transition-all duration-150
-                      ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
-                      ${isWorkflowActive ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/70 hover:text-white'}
-                    `}
-                    title={collapsed ? 'Work Flows' : undefined}
-                  >
-                    {isWorkflowActive && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-primary-400" />
-                    )}
-                    <span className={`shrink-0 ${isWorkflowActive ? 'text-primary-400' : ''}`}>
-                      <GitBranch size={18} />
-                    </span>
-                    {!collapsed && (
-                      <>
-                        <span className="text-[13px] font-medium truncate flex-1">Work Flows</span>
-                        <span className="shrink-0 ml-1">
-                          {workflowExpanded
-                            ? <ChevronUp size={13} className="text-white/50" />
-                            : <ChevronDown size={13} className="text-white/50" />
-                          }
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Sub-menu items */}
-                  {!collapsed && workflowExpanded && (
-                    <div className="ml-2 mt-0.5 mb-1">
-                      {/* Pre-Registered */}
-                      <Link href="/site-admin/workflows/pre-registered">
-                        <div
-                          className={`
-                            relative flex items-center gap-2.5 mx-2 my-0.5 pl-7 pr-3 py-1.5 rounded-lg cursor-pointer
-                            transition-all duration-150
-                            ${isPreRegistered ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/60 hover:text-white'}
-                          `}
-                        >
-                          {isPreRegistered && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-blue-400" />
-                          )}
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isPreRegistered ? 'bg-blue-400' : 'bg-white/30'}`} />
-                          <span className="text-[12px] font-medium truncate">Pre-Registered</span>
-                        </div>
-                      </Link>
-
-                      {/* Walk-In Visitors */}
-                      <Link href="/site-admin/workflows/walk-in">
-                        <div
-                          className={`
-                            relative flex items-center gap-2.5 mx-2 my-0.5 pl-7 pr-3 py-1.5 rounded-lg cursor-pointer
-                            transition-all duration-150
-                            ${isWalkIn ? 'bg-orange-500/20 text-white' : 'hover:bg-white/[0.07] text-white/60 hover:text-white'}
-                          `}
-                        >
-                          {isWalkIn && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-orange-400" />
-                          )}
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isWalkIn ? 'bg-orange-400' : 'bg-white/30'}`} />
-                          <span className="text-[12px] font-medium truncate">Walk-In Visitors</span>
-                        </div>
-                      </Link>
-                    </div>
+                {/* Work Flows Parent */}
+                <div
+                  onClick={() => { if (!collapsed) setWorkflowExpanded(prev => !prev); }}
+                  className={`
+                    relative flex items-center gap-3 mx-2 my-0.5 rounded-lg cursor-pointer
+                    transition-all duration-150
+                    ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
+                    ${isWorkflowActive ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/70 hover:text-white'}
+                  `}
+                  title={collapsed ? 'Work Flows' : undefined}
+                >
+                  {isWorkflowActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-primary-400" />
                   )}
-
-                  {/* Collapsed indicator */}
-                  {collapsed && isWorkflowActive && (
-                    <div className="flex justify-center mt-0.5 mb-1">
-                      <div className="w-1 h-1 rounded-full bg-primary-400" />
-                    </div>
+                  <span className={`shrink-0 ${isWorkflowActive ? 'text-primary-400' : ''}`}>
+                    <GitBranch size={18} />
+                  </span>
+                  {!collapsed && (
+                    <>
+                      <span className="text-[13px] font-medium truncate flex-1">Work Flows</span>
+                      <span className="shrink-0 ml-1">
+                        {workflowExpanded
+                          ? <ChevronUp size={13} className="text-white/50" />
+                          : <ChevronDown size={13} className="text-white/50" />
+                        }
+                      </span>
+                    </>
                   )}
-
-                  {/* Remaining CORE CONFIGURATION items (Induction Hub, Branding) */}
-                  {items.filter(i => i.id !== 'sa-dashboard' && i.id !== 'sa-visitor-types').map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                    return (
-                      <Link key={item.id} href={item.href}>
-                        <div
-                          className={`relative flex items-center gap-3 mx-2 my-0.5 rounded-lg cursor-pointer transition-all duration-150
-                            ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
-                            ${isActive ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/70 hover:text-white'}`}
-                          title={collapsed ? item.label : undefined}
-                        >
-                          {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-primary-400" />}
-                          <span className={`shrink-0 ${isActive ? 'text-primary-400' : ''}`}>{item.icon}</span>
-                          {!collapsed && <span className="text-[13px] font-medium truncate flex-1">{item.label}</span>}
-                        </div>
-                      </Link>
-                    );
-                  })}
                 </div>
-              )}
 
-              {group !== 'CORE CONFIGURATION' && items.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                return (
-                  <Link key={item.id} href={item.href}>
-                    <div
-                      className={`relative flex items-center gap-3 mx-2 my-0.5 rounded-lg cursor-pointer transition-all duration-150
-                        ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
-                        ${isActive ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/70 hover:text-white'}`}
-                      title={collapsed ? item.label : undefined}
-                    >
-                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-primary-400" />}
-                      <span className={`shrink-0 ${isActive ? 'text-primary-400' : ''}`}>{item.icon}</span>
-                      {!collapsed && <span className="text-[13px] font-medium truncate flex-1">{item.label}</span>}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          );
-        })}
+                {/* Sub-menu items */}
+                {!collapsed && workflowExpanded && (
+                  <div className="ml-2 mt-0.5 mb-1">
+                    <Link href="/site-admin/workflows/pre-registered">
+                      <div
+                        className={`
+                          relative flex items-center gap-2.5 mx-2 my-0.5 pl-7 pr-3 py-1.5 rounded-lg cursor-pointer
+                          transition-all duration-150
+                          ${isPreRegistered ? 'bg-primary-600/20 text-white' : 'hover:bg-white/[0.07] text-white/60 hover:text-white'}
+                        `}
+                      >
+                        {isPreRegistered && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-blue-400" />
+                        )}
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isPreRegistered ? 'bg-blue-400' : 'bg-white/30'}`} />
+                        <span className="text-[12px] font-medium truncate">Pre-Registered</span>
+                      </div>
+                    </Link>
+                    <Link href="/site-admin/workflows/walk-in">
+                      <div
+                        className={`
+                          relative flex items-center gap-2.5 mx-2 my-0.5 pl-7 pr-3 py-1.5 rounded-lg cursor-pointer
+                          transition-all duration-150
+                          ${isWalkIn ? 'bg-orange-500/20 text-white' : 'hover:bg-white/[0.07] text-white/60 hover:text-white'}
+                        `}
+                      >
+                        {isWalkIn && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-orange-400" />
+                        )}
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isWalkIn ? 'bg-orange-400' : 'bg-white/30'}`} />
+                        <span className="text-[12px] font-medium truncate">Walk-In Visitors</span>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+
+                {/* Collapsed workflow indicator */}
+                {collapsed && isWorkflowActive && (
+                  <div className="flex justify-center mt-0.5 mb-1">
+                    <div className="w-1 h-1 rounded-full bg-primary-400" />
+                  </div>
+                )}
+
+                {/* Induction Hub & Branding */}
+                {group.items.filter(i => i.id !== 'sa-visitor-types').map(item => (
+                  <NavItemRow
+                    key={item.id}
+                    item={item}
+                    collapsed={collapsed}
+                    isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
+                  />
+                ))}
+              </>
+            ) : (
+              /* All other groups render normally */
+              group.items.map(item => (
+                <NavItemRow
+                  key={item.id}
+                  item={item}
+                  collapsed={collapsed}
+                  isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
+                />
+              ))
+            )}
+          </div>
+        ))}
       </nav>
 
       {/* Bottom */}
       <div className="shrink-0 border-t" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-        <div className={`flex items-center gap-3 mx-2 my-1.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/[0.07] transition-all duration-150 ${collapsed ? 'justify-center px-0' : ''}`} style={{ color: 'rgba(255,255,255,0.55)' }}>
+        {/* Help Center */}
+        <div className={`flex items-center gap-3 mx-2 mt-1.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/[0.07] transition-all duration-150 ${collapsed ? 'justify-center px-0' : ''}`} style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <HelpCircle size={16} className="shrink-0" />
+          {!collapsed && <span className="text-[13px] font-medium">Help Center / Support</span>}
+        </div>
+        {/* Dark Mode */}
+        <div className={`flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/[0.07] transition-all duration-150 ${collapsed ? 'justify-center px-0' : ''}`} style={{ color: 'rgba(255,255,255,0.55)' }}>
           <Moon size={16} className="shrink-0" />
           {!collapsed && <span className="text-[13px] font-medium">Dark Mode</span>}
         </div>
+        {/* User / Logout */}
         <div className={`flex items-center gap-2.5 mx-2 mb-2 p-2 rounded-lg hover:bg-white/[0.07] cursor-pointer transition-all duration-150 ${collapsed ? 'justify-center' : ''}`}>
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold shrink-0">SA</div>
           {!collapsed && (
