@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import AppLayout from '@/components/AppLayout';
-import { HelpCircle, RefreshCw, Download, Search, Plus, Upload, X, ChevronDown, Check, ToggleLeft, ToggleRight, Crown, Shield, UserCheck, Eye, Headphones, Users, Calendar, Camera, CheckCircle2, XCircle, Send, FileText, Link2, Loader2, ChevronRight,  } from 'lucide-react';
+import { HelpCircle, RefreshCw, Download, Search, Plus, Upload, X, ChevronDown, Check, ToggleLeft, ToggleRight, Crown, Shield, UserCheck, Eye, Headphones, Users, Calendar, Camera, CheckCircle2, XCircle, Send, FileText, Link2, Loader2, ChevronRight, RotateCcw } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +62,43 @@ const ROLE_CARD_CONFIG = [
   { role: 'Host' as RoleType, iconBg: 'bg-orange-100', countBg: 'bg-orange-100 text-orange-700' },
   { role: 'Assistant' as RoleType, iconBg: 'bg-pink-100', countBg: 'bg-pink-100 text-pink-700' },
 ];
+
+// ─── Permission Matrix Data ───────────────────────────────────────────────────
+
+const FEATURE_MODULES = [
+  'Dashboard',
+  'Visitor Logs',
+  'Visitor Types',
+  'Work Flows',
+  'Induction Hub',
+  'Branding & Appearance',
+  'Blacklist & Watchlists',
+  'Sites & Locations',
+  'Gates & Entry Points',
+  'Access Zones',
+  'Kiosks & Hardware',
+  'Users & Permissions',
+  'Integrations',
+  'Notifications',
+  'Reports & Analytics',
+  'Compliance & Audit',
+  'Settings',
+  'Invite Visitors',
+  'Approve / Reject Visits',
+  'Print Badges',
+];
+
+const ORDERED_ROLES: RoleType[] = ['Super Admin', 'Site Admin', 'Front Desk Admin', 'Security Admin', 'Host', 'Assistant'];
+
+// Default permissions per role per feature
+const DEFAULT_PERMISSIONS: Record<RoleType, Record<string, boolean>> = {
+  'Super Admin': Object.fromEntries(FEATURE_MODULES.map(f => [f, true])),
+  'Site Admin': Object.fromEntries(FEATURE_MODULES.map(f => [f, ['Dashboard','Visitor Logs','Visitor Types','Work Flows','Induction Hub','Branding & Appearance','Blacklist & Watchlists','Sites & Locations','Gates & Entry Points','Access Zones','Kiosks & Hardware','Notifications','Reports & Analytics','Compliance & Audit','Settings','Invite Visitors','Approve / Reject Visits','Print Badges'].includes(f)])),
+  'Front Desk Admin': Object.fromEntries(FEATURE_MODULES.map(f => [f, ['Dashboard','Visitor Logs','Visitor Types','Induction Hub','Blacklist & Watchlists','Notifications','Invite Visitors','Approve / Reject Visits','Print Badges'].includes(f)])),
+  'Security Admin': Object.fromEntries(FEATURE_MODULES.map(f => [f, ['Dashboard','Visitor Logs','Blacklist & Watchlists','Gates & Entry Points','Access Zones','Notifications','Reports & Analytics','Compliance & Audit'].includes(f)])),
+  'Host': Object.fromEntries(FEATURE_MODULES.map(f => [f, ['Dashboard','Visitor Logs','Notifications','Invite Visitors','Approve / Reject Visits'].includes(f)])),
+  'Assistant': Object.fromEntries(FEATURE_MODULES.map(f => [f, ['Dashboard','Visitor Logs','Notifications','Invite Visitors','Approve / Reject Visits','Print Badges'].includes(f)])),
+};
 
 // ─── Role Badge ───────────────────────────────────────────────────────────────
 
@@ -477,6 +514,18 @@ function EmployeeDirectoryTab() {
     Object.fromEntries(EMPLOYEES.map(e => [e.id, e.showAsHost]))
   );
 
+  // Build a map: assistant name -> list of hosts they assist
+  const assistantToMap = React.useMemo(() => {
+    const map: Record<string, string[]> = {};
+    employees.forEach(emp => {
+      emp.assistants.forEach(assistantName => {
+        if (!map[assistantName]) map[assistantName] = [];
+        map[assistantName].push(emp.name);
+      });
+    });
+    return map;
+  }, [employees]);
+
   const filtered = employees.filter(e =>
     e.name.toLowerCase().includes(search.toLowerCase()) ||
     e.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -562,90 +611,107 @@ function EmployeeDirectoryTab() {
       {/* Table */}
       <div className="bg-white rounded-card card-shadow border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-[12px] min-w-[1200px]">
+          <table className="w-full text-[12px] min-w-[1300px]">
             <thead className="bg-surface border-b border-border">
               <tr>
                 <th className="px-4 py-3 w-10">
                   <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded border-border" />
                 </th>
-                {['USER', 'MOBILE', 'ROLE', 'TITLE / DEPT', 'PRIMARY SITE / ASSIGNED', 'MANAGER', 'ASSISTANT(S)', 'HOST ON KIOSK', 'LAST LOGIN', 'STATUS'].map(h => (
+                {['USER', 'MOBILE', 'ROLE', 'TITLE / DEPT', 'PRIMARY SITE / ASSIGNED', 'MANAGER', 'ASSISTANT(S)', 'ASSISTANT TO', 'HOST ON KIOSK', 'LAST LOGIN', 'STATUS'].map(h => (
                   <th key={h} className="px-3 py-3 text-left text-[10px] font-bold text-text-muted uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
                 <th className="px-3 py-3 w-10" />
               </tr>
             </thead>
             <tbody>
-              {filtered.map(emp => (
-                <tr
-                  key={emp.id}
-                  onClick={() => setDrawerEmployee(emp)}
-                  className="border-t border-border hover:bg-surface/60 cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-3" onClick={e => { e.stopPropagation(); toggleOne(emp.id); }}>
-                    <input type="checkbox" checked={selected.includes(emp.id)} onChange={() => toggleOne(emp.id)} className="rounded border-border" />
-                  </td>
-                  {/* User */}
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-full ${emp.color} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}>
-                        {emp.initials}
+              {filtered.map(emp => {
+                const assistantTo = assistantToMap[emp.name] || [];
+                return (
+                  <tr
+                    key={emp.id}
+                    onClick={() => setDrawerEmployee(emp)}
+                    className="border-t border-border hover:bg-surface/60 cursor-pointer transition-colors"
+                  >
+                    <td className="px-4 py-3" onClick={e => { e.stopPropagation(); toggleOne(emp.id); }}>
+                      <input type="checkbox" checked={selected.includes(emp.id)} onChange={() => toggleOne(emp.id)} className="rounded border-border" />
+                    </td>
+                    {/* User */}
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-full ${emp.color} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}>
+                          {emp.initials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-text-primary truncate">{emp.name}</p>
+                          <p className="text-[11px] text-text-muted truncate">{emp.email}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-text-primary truncate">{emp.name}</p>
-                        <p className="text-[11px] text-text-muted truncate">{emp.email}</p>
+                    </td>
+                    {/* Mobile */}
+                    <td className="px-3 py-3 text-text-secondary whitespace-nowrap">{emp.mobile}</td>
+                    {/* Role */}
+                    <td className="px-3 py-3"><RoleBadge role={emp.role} /></td>
+                    {/* Title/Dept */}
+                    <td className="px-3 py-3">
+                      <p className="font-medium text-text-primary">{emp.title}</p>
+                      <p className="text-[11px] text-text-muted">{emp.department}</p>
+                    </td>
+                    {/* Sites */}
+                    <td className="px-3 py-3">
+                      <p className="font-medium text-text-primary">{emp.primarySite}</p>
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {emp.assignedSites.slice(0, 2).map(s => (
+                          <span key={s} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded-md">{s}</span>
+                        ))}
+                        {emp.assignedSites.length > 2 && (
+                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-md">+{emp.assignedSites.length - 2}</span>
+                        )}
                       </div>
-                    </div>
-                  </td>
-                  {/* Mobile */}
-                  <td className="px-3 py-3 text-text-secondary whitespace-nowrap">{emp.mobile}</td>
-                  {/* Role */}
-                  <td className="px-3 py-3"><RoleBadge role={emp.role} /></td>
-                  {/* Title/Dept */}
-                  <td className="px-3 py-3">
-                    <p className="font-medium text-text-primary">{emp.title}</p>
-                    <p className="text-[11px] text-text-muted">{emp.department}</p>
-                  </td>
-                  {/* Sites */}
-                  <td className="px-3 py-3">
-                    <p className="font-medium text-text-primary">{emp.primarySite}</p>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {emp.assignedSites.slice(0, 2).map(s => (
-                        <span key={s} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded-md">{s}</span>
-                      ))}
-                      {emp.assignedSites.length > 2 && (
-                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-md">+{emp.assignedSites.length - 2}</span>
+                    </td>
+                    {/* Manager */}
+                    <td className="px-3 py-3 text-text-secondary">{emp.manager}</td>
+                    {/* Assistants */}
+                    <td className="px-3 py-3 text-text-secondary">
+                      {emp.assistants.length === 0 ? '—' : emp.assistants.length === 1 ? emp.assistants[0] : `${emp.assistants.length} assistants`}
+                    </td>
+                    {/* Assistant To */}
+                    <td className="px-3 py-3">
+                      {emp.role === 'Assistant' && assistantTo.length > 0 ? (
+                        <div className="flex flex-col gap-0.5">
+                          {assistantTo.map(name => (
+                            <span key={name} className="inline-flex items-center gap-1 px-2 py-0.5 bg-pink-50 text-pink-700 border border-pink-200 rounded-full text-[10px] font-semibold whitespace-nowrap">
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-text-muted text-[11px]">—</span>
                       )}
-                    </div>
-                  </td>
-                  {/* Manager */}
-                  <td className="px-3 py-3 text-text-secondary">{emp.manager}</td>
-                  {/* Assistants */}
-                  <td className="px-3 py-3 text-text-secondary">
-                    {emp.assistants.length === 0 ? '—' : emp.assistants.length === 1 ? emp.assistants[0] : `${emp.assistants.length} assistants`}
-                  </td>
-                  {/* Kiosk Toggle */}
-                  <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
-                    {(emp.role === 'Host' || emp.role === 'Assistant') ? (
-                      <KioskToggle value={kioskStates[emp.id] ?? emp.showAsHost} onChange={v => handleKioskToggle(emp.id, v)} />
-                    ) : (
-                      <span className="text-text-muted text-[11px]">—</span>
-                    )}
-                  </td>
-                  {/* Last Login */}
-                  <td className="px-3 py-3 text-text-muted whitespace-nowrap">{emp.lastLogin || '—'}</td>
-                  {/* Status */}
-                  <td className="px-3 py-3"><StatusPill status={emp.status} /></td>
-                  {/* Actions */}
-                  <td className="px-3 py-3">
-                    <button onClick={e => { e.stopPropagation(); setDrawerEmployee(emp); }} className="p-1.5 rounded-lg hover:bg-surface text-text-muted">
-                      <ChevronRight size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    {/* Kiosk Toggle */}
+                    <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
+                      {(emp.role === 'Host' || emp.role === 'Assistant') ? (
+                        <KioskToggle value={kioskStates[emp.id] ?? emp.showAsHost} onChange={v => handleKioskToggle(emp.id, v)} />
+                      ) : (
+                        <span className="text-text-muted text-[11px]">—</span>
+                      )}
+                    </td>
+                    {/* Last Login */}
+                    <td className="px-3 py-3 text-text-muted whitespace-nowrap">{emp.lastLogin || '—'}</td>
+                    {/* Status */}
+                    <td className="px-3 py-3"><StatusPill status={emp.status} /></td>
+                    {/* Actions */}
+                    <td className="px-3 py-3">
+                      <button onClick={e => { e.stopPropagation(); setDrawerEmployee(emp); }} className="p-1.5 rounded-lg hover:bg-surface text-text-muted">
+                        <ChevronRight size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-4 py-10 text-center text-text-muted text-[13px]">No employees found</td>
+                  <td colSpan={13} className="px-4 py-10 text-center text-text-muted text-[13px]">No employees found</td>
                 </tr>
               )}
             </tbody>
@@ -662,31 +728,192 @@ function EmployeeDirectoryTab() {
   );
 }
 
+// ─── Permission Matrix ────────────────────────────────────────────────────────
+
+type PermissionsState = Record<RoleType, Record<string, boolean>>;
+
+function PermissionMatrixSection() {
+  const [permissions, setPermissions] = useState<PermissionsState>(() =>
+    JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS))
+  );
+  const [saved, setSaved] = useState(false);
+  const [search, setSearch] = useState('');
+  const [tooltipCell, setTooltipCell] = useState<{ role: RoleType; feature: string } | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+
+  const filteredFeatures = FEATURE_MODULES.filter(f =>
+    f.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const togglePermission = useCallback((role: RoleType, feature: string) => {
+    if (role === 'Super Admin') return;
+    setPermissions(prev => {
+      const next = JSON.parse(JSON.stringify(prev)) as PermissionsState;
+      next[role][feature] = !next[role][feature];
+      return next;
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, []);
+
+  const handleReset = () => {
+    setPermissions(JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const roleBadgeColors: Record<RoleType, string> = {
+    'Super Admin': 'bg-amber-50 text-amber-700 border-amber-200',
+    'Site Admin': 'bg-blue-50 text-blue-700 border-blue-200',
+    'Front Desk Admin': 'bg-green-50 text-green-700 border-green-200',
+    'Security Admin': 'bg-purple-50 text-purple-700 border-purple-200',
+    'Host': 'bg-orange-50 text-orange-700 border-orange-200',
+    'Assistant': 'bg-pink-50 text-pink-700 border-pink-200',
+  };
+
+  return (
+    <div className="bg-white rounded-card card-shadow border border-border overflow-hidden">
+      {/* Matrix Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-[15px] font-bold text-text-primary">Roles & Permissions Matrix</h2>
+          <div className="relative" onMouseEnter={() => setShowHelp(true)} onMouseLeave={() => setShowHelp(false)}>
+            <HelpCircle size={15} className="text-text-muted cursor-help" />
+            {showHelp && (
+              <div className="absolute left-6 top-0 z-50 w-72 bg-slate-800 text-white text-[11px] rounded-lg px-3 py-2 shadow-xl whitespace-normal">
+                Click any checkbox to toggle a permission ON or OFF for that role. Super Admin permissions are fixed and cannot be changed. Changes are auto-saved.
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Legend */}
+          <div className="flex items-center gap-3 px-3 py-1.5 bg-surface rounded-lg border border-border text-[11px]">
+            <span className="font-semibold text-text-muted">Legend:</span>
+            <span className="flex items-center gap-1 text-text-secondary">✅ <span>= Full Access</span></span>
+            <span className="flex items-center gap-1 text-text-secondary">⬜ <span>= No Access</span></span>
+          </div>
+          {saved && (
+            <span className="flex items-center gap-1 text-[11px] text-green-600 font-semibold bg-green-50 border border-green-200 px-2 py-1 rounded-lg">
+              <CheckCircle2 size={12} /> Saved
+            </span>
+          )}
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-secondary border border-border rounded-lg hover:bg-surface bg-white transition-colors"
+          >
+            <RotateCcw size={13} /> Reset to Default Permissions
+          </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="px-5 py-3 border-b border-border">
+        <div className="relative max-w-xs">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search feature modules..."
+            className="pl-8 pr-3 py-2 text-[12px] bg-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 w-full"
+          />
+        </div>
+      </div>
+
+      {/* Scrollable Matrix Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-[12px]" style={{ minWidth: '900px' }}>
+          <thead>
+            <tr className="bg-surface border-b border-border">
+              <th className="px-4 py-3 text-left text-[10px] font-bold text-text-muted uppercase tracking-wider sticky left-0 bg-surface z-10 min-w-[200px]">
+                Module / Feature
+              </th>
+              {ORDERED_ROLES.map(role => (
+                <th key={role} className="px-3 py-3 text-center min-w-[120px]">
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold border ${roleBadgeColors[role]}`}>
+                    {ROLE_CONFIG[role].icon}
+                    <span className="truncate max-w-[80px]">{role}</span>
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredFeatures.map((feature, rowIdx) => (
+              <tr
+                key={feature}
+                className={`border-b border-border/50 transition-colors hover:bg-primary-50/20 ${rowIdx % 2 === 1 ? 'bg-slate-50/40' : ''}`}
+              >
+                <td className="px-4 py-2.5 font-medium text-text-secondary sticky left-0 bg-inherit z-10 whitespace-nowrap">
+                  {feature}
+                </td>
+                {ORDERED_ROLES.map(role => {
+                  const isChecked = permissions[role][feature] ?? false;
+                  const isSuperAdmin = role === 'Super Admin';
+                  const isHovered = tooltipCell?.role === role && tooltipCell?.feature === feature;
+                  return (
+                    <td
+                      key={role}
+                      className="px-3 py-2.5 text-center relative"
+                      onMouseEnter={() => setTooltipCell({ role, feature })}
+                      onMouseLeave={() => setTooltipCell(null)}
+                    >
+                      {isSuperAdmin ? (
+                        <span className="text-lg select-none">✅</span>
+                      ) : (
+                        <button
+                          onClick={() => togglePermission(role, feature)}
+                          className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center mx-auto transition-all duration-150 ${
+                            isChecked
+                              ? 'bg-primary-600 border-primary-600 text-white hover:bg-primary-700' :'bg-white border-slate-200 hover:border-primary-300 hover:bg-primary-50'
+                          }`}
+                          title={`${isChecked ? 'Remove' : 'Grant'} ${role} access to ${feature}`}
+                        >
+                          {isChecked ? <Check size={14} className="text-white" /> : <span className="w-3 h-3 block" />}
+                        </button>
+                      )}
+                      {/* Tooltip */}
+                      {isHovered && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-48 bg-slate-800 text-white text-[10px] rounded-lg px-2.5 py-1.5 shadow-xl whitespace-normal pointer-events-none">
+                          {isChecked || isSuperAdmin
+                            ? `${role} can access ${feature}`
+                            : `${role} cannot access ${feature}`}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            {filteredFeatures.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-text-muted text-[13px]">No modules match your search</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer note */}
+      <div className="px-5 py-3 border-t border-border bg-surface/50 flex items-center gap-2">
+        <Shield size={13} className="text-amber-600 shrink-0" />
+        <p className="text-[11px] text-text-muted">Super Admin row is read-only — Super Admins always have full access to all modules.</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Roles & Permissions Tab ──────────────────────────────────────────────────
 
 function RolesPermissionsTab() {
-  const [roleFilter, setRoleFilter] = useState<'All' | RoleType>('All');
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<string[]>([]);
-  const [drawerEmployee, setDrawerEmployee] = useState<Employee | null>(null);
-
   const roleCounts = (Object.keys(ROLE_CONFIG) as RoleType[]).reduce((acc, r) => {
     acc[r] = EMPLOYEES.filter(e => e.role === r).length;
     return acc;
   }, {} as Record<RoleType, number>);
 
-  const filtered = EMPLOYEES.filter(e => {
-    const matchRole = roleFilter === 'All' || e.role === roleFilter;
-    const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) || e.email.toLowerCase().includes(search.toLowerCase());
-    return matchRole && matchSearch;
-  });
-
-  const allSelected = selected.length === filtered.length && filtered.length > 0;
-  const toggleAll = () => setSelected(allSelected ? [] : filtered.map(e => e.id));
-  const toggleOne = (id: string) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Role Summary Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-3">
         {ROLE_CARD_CONFIG.map(({ role, iconBg, countBg }) => {
@@ -694,9 +921,7 @@ function RolesPermissionsTab() {
           return (
             <div
               key={role}
-              onClick={() => setRoleFilter(roleFilter === role ? 'All' : role)}
-              className={`bg-white rounded-card card-shadow border p-4 flex items-center gap-3 cursor-pointer transition-all duration-150 hover:shadow-card-md ${roleFilter === role ? `${cfg.border} ring-2 ring-offset-1` : 'border-border'}`}
-              style={roleFilter === role ? { ringColor: 'currentColor' } : {}}
+              className="bg-white rounded-card card-shadow border border-border p-4 flex items-center gap-3 hover:shadow-card-md transition-all duration-150"
             >
               <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
                 {cfg.icon}
@@ -704,7 +929,7 @@ function RolesPermissionsTab() {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-[13px] font-bold text-text-primary leading-tight">{role}</p>
-                  <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-lg ${countBg}`}>{roleCounts[role]}</span>
+                  <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-lg ${countBg}`}>{roleCounts[role]} users</span>
                 </div>
                 <p className="text-[10px] text-text-muted mt-0.5 leading-tight line-clamp-2">{cfg.desc}</p>
               </div>
@@ -713,123 +938,8 @@ function RolesPermissionsTab() {
         })}
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search users..."
-            className="pl-8 pr-3 py-2 text-[12px] bg-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 w-52"
-          />
-        </div>
-        <div className="flex items-center bg-white border border-border rounded-lg p-0.5 gap-0.5 flex-wrap">
-          {(['All', ...Object.keys(ROLE_CONFIG)] as Array<'All' | RoleType>).map(r => (
-            <button
-              key={r}
-              onClick={() => setRoleFilter(r)}
-              className={`px-2.5 py-1 text-[11px] font-semibold rounded-md whitespace-nowrap transition-all duration-150 ${roleFilter === r ? 'bg-primary-600 text-white shadow-sm' : 'text-text-muted hover:text-text-primary hover:bg-surface'}`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Bulk Actions */}
-      {selected.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-primary-50 border border-primary-200 rounded-xl">
-          <span className="text-[12px] font-semibold text-primary-700">{selected.length} selected</span>
-          <div className="w-px h-4 bg-primary-200 mx-1" />
-          <button className="flex items-center gap-1 px-3 py-1.5 text-[12px] font-medium text-primary-700 bg-white border border-primary-200 rounded-lg hover:bg-primary-50">
-            <Send size={12} /> Invite Selected
-          </button>
-          <button className="flex items-center gap-1 px-3 py-1.5 text-[12px] font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50">
-            <XCircle size={12} /> Deactivate
-          </button>
-          <button className="flex items-center gap-1 px-3 py-1.5 text-[12px] font-medium text-text-secondary bg-white border border-border rounded-lg hover:bg-surface">
-            <Download size={12} /> Export CSV
-          </button>
-          <button onClick={() => setSelected([])} className="ml-auto p-1 rounded hover:bg-primary-100 text-primary-600">
-            <X size={14} />
-          </button>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="bg-white rounded-card card-shadow border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-[12px] min-w-[1100px]">
-            <thead className="bg-surface border-b border-border">
-              <tr>
-                <th className="px-4 py-3 w-10">
-                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded border-border" />
-                </th>
-                {['USER', 'MOBILE', 'ROLE', 'TITLE / DEPT', 'PRIMARY SITE / ASSIGNED', 'MANAGER', 'ASSISTANT(S)', 'HOST ON KIOSK', 'LAST LOGIN', 'STATUS'].map(h => (
-                  <th key={h} className="px-3 py-3 text-left text-[10px] font-bold text-text-muted uppercase tracking-wider whitespace-nowrap">{h}</th>
-                ))}
-                <th className="px-3 py-3 w-10" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(emp => (
-                <tr key={emp.id} onClick={() => setDrawerEmployee(emp)} className="border-t border-border hover:bg-surface/60 cursor-pointer transition-colors">
-                  <td className="px-4 py-3" onClick={e => { e.stopPropagation(); toggleOne(emp.id); }}>
-                    <input type="checkbox" checked={selected.includes(emp.id)} onChange={() => toggleOne(emp.id)} className="rounded border-border" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-full ${emp.color} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}>{emp.initials}</div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-text-primary truncate">{emp.name}</p>
-                        <p className="text-[11px] text-text-muted truncate">{emp.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-text-secondary whitespace-nowrap">{emp.mobile}</td>
-                  <td className="px-3 py-3"><RoleBadge role={emp.role} /></td>
-                  <td className="px-3 py-3">
-                    <p className="font-medium text-text-primary">{emp.title}</p>
-                    <p className="text-[11px] text-text-muted">{emp.department}</p>
-                  </td>
-                  <td className="px-3 py-3">
-                    <p className="font-medium text-text-primary">{emp.primarySite}</p>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {emp.assignedSites.slice(0, 2).map(s => (
-                        <span key={s} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded-md">{s}</span>
-                      ))}
-                      {emp.assignedSites.length > 2 && <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-md">+{emp.assignedSites.length - 2}</span>}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-text-secondary">{emp.manager}</td>
-                  <td className="px-3 py-3 text-text-secondary">{emp.assistants.length === 0 ? '—' : emp.assistants.length === 1 ? emp.assistants[0] : `${emp.assistants.length} assistants`}</td>
-                  <td className="px-3 py-3">
-                    {(emp.role === 'Host' || emp.role === 'Assistant') ? (
-                      <span className={`text-[11px] font-semibold ${emp.showAsHost ? 'text-indigo-600' : 'text-text-muted'}`}>{emp.showAsHost ? 'Yes' : 'No'}</span>
-                    ) : <span className="text-text-muted text-[11px]">—</span>}
-                  </td>
-                  <td className="px-3 py-3 text-text-muted whitespace-nowrap">{emp.lastLogin || '—'}</td>
-                  <td className="px-3 py-3"><StatusPill status={emp.status} /></td>
-                  <td className="px-3 py-3">
-                    <button onClick={e => { e.stopPropagation(); setDrawerEmployee(emp); }} className="p-1.5 rounded-lg hover:bg-surface text-text-muted">
-                      <ChevronRight size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={12} className="px-4 py-10 text-center text-text-muted text-[13px]">No users found for this role</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-4 py-3 border-t border-border">
-          <p className="text-[12px] text-text-muted">{filtered.length} of {EMPLOYEES.length} users</p>
-        </div>
-      </div>
-
-      {drawerEmployee && <EmployeeDrawer employee={drawerEmployee} onClose={() => setDrawerEmployee(null)} onSave={() => setDrawerEmployee(null)} />}
+      {/* Permission Matrix */}
+      <PermissionMatrixSection />
     </div>
   );
 }

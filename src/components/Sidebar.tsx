@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { useRole } from '@/context/RoleContext';
-import { LayoutDashboard, Users, GitBranch, Paintbrush, ShieldAlert, MonitorSmartphone, UserCog, Moon, ChevronLeft, ChevronRight, LogOut, ChevronDown, ChevronUp, ClipboardList, Shield, Lock, DoorOpen, Plug, Bell, BarChart2, BookOpen, Settings, Building2, HelpCircle,  } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, Paintbrush, ShieldAlert, MonitorSmartphone, UserCog, ChevronLeft, ChevronRight, LogOut, ChevronDown, ChevronUp, ClipboardList, Shield, Lock, DoorOpen, Plug, Bell, BarChart2, BookOpen, Settings, Building2,  } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -323,27 +323,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* Bottom */}
       <div className="shrink-0 border-t" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-        {/* Help Center */}
-        <div
-          className={`flex items-center gap-3 mx-2 my-1 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/[0.07] transition-all duration-150 ${collapsed ? 'justify-center px-0' : ''}`}
-          style={{ color: 'rgba(255,255,255,0.55)' }}
-        >
-          <HelpCircle size={16} className="shrink-0" />
-          {!collapsed && <span className="text-[13px] font-medium">Help Center</span>}
-        </div>
-
-        {/* Dark mode toggle */}
-        <div
-          className={`flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/[0.07] transition-all duration-150 ${collapsed ? 'justify-center px-0' : ''}`}
-          style={{ color: 'rgba(255,255,255,0.55)' }}
-        >
-          <Moon size={16} className="shrink-0" />
-          {!collapsed && <span className="text-[13px] font-medium">Dark Mode</span>}
-        </div>
-
         {/* User profile */}
         <div
-          className={`flex items-center gap-2.5 mx-2 mb-2 p-2 rounded-lg hover:bg-white/[0.07] cursor-pointer transition-all duration-150 ${collapsed ? 'justify-center' : ''}`}
+          className={`flex items-center gap-2.5 mx-2 mb-2 mt-2 p-2 rounded-lg hover:bg-white/[0.07] cursor-pointer transition-all duration-150 ${collapsed ? 'justify-center' : ''}`}
         >
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold shrink-0">
             RP

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Bell, ChevronDown, Wifi } from 'lucide-react';
+import { Search, Bell, ChevronDown, Wifi, HelpCircle, Moon, Sun } from 'lucide-react';
 
 interface TopbarProps {
   title?: string;
@@ -10,6 +10,8 @@ interface TopbarProps {
 
 export default function Topbar({ title, subtitle }: TopbarProps) {
   const [searchVal, setSearchVal] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
+  const [showHelpTooltip, setShowHelpTooltip] = useState(false);
 
   return (
     <header
@@ -30,6 +32,33 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
           ⌘K
         </kbd>
       </div>
+
+      {/* Help Centre */}
+      <div className="relative" onMouseEnter={() => setShowHelpTooltip(true)} onMouseLeave={() => setShowHelpTooltip(false)}>
+        <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium text-text-secondary border border-border rounded-lg hover:bg-surface hover:border-border/80 transition-all duration-150">
+          <HelpCircle size={14} className="text-text-muted" />
+          <span className="hidden sm:inline">Help</span>
+        </button>
+        {showHelpTooltip && (
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-40 bg-slate-800 text-white text-[11px] rounded-lg px-3 py-2 shadow-xl whitespace-nowrap pointer-events-none">
+            Help Centre & Support
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-800" />
+          </div>
+        )}
+      </div>
+
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={() => setDarkMode(d => !d)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium text-text-secondary border border-border rounded-lg hover:bg-surface hover:border-border/80 transition-all duration-150"
+        title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      >
+        {darkMode
+          ? <Sun size={14} className="text-amber-500" />
+          : <Moon size={14} className="text-text-muted" />
+        }
+        <span className="hidden sm:inline">{darkMode ? 'Light' : 'Dark'}</span>
+      </button>
 
       <div className="flex items-center gap-1.5 ml-auto">
         {/* Live sync indicator */}
