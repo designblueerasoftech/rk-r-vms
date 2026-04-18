@@ -765,8 +765,8 @@ function PermissionCell({
         <div className="flex items-center justify-center">
           <div className="relative group">
             <div
-              className="w-5 h-5 rounded-[4px] flex items-center justify-center opacity-60 cursor-not-allowed"
-              style={{ background: '#4F46E5', border: '1px solid #4338CA', minWidth: '20px', minHeight: '20px' }}
+              className="w-5 h-5 rounded-[4px] flex items-center justify-center opacity-60 cursor-not-allowed permission-checkbox-checked"
+              style={{ backgroundColor: '#4F46E5', borderColor: '#4338CA', border: '1px solid #4338CA', minWidth: '20px', minHeight: '20px' }}
             >
               <Check size={12} strokeWidth={3} className="text-white" />
             </div>
@@ -778,11 +778,11 @@ function PermissionCell({
       ) : (
         <button
           onClick={onToggle}
-          className={`w-5 h-5 rounded-[4px] flex items-center justify-center mx-auto transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-300 ${
+          className={`w-5 h-5 rounded-[4px] flex items-center justify-center mx-auto transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300 ${
             isChecked
-              ? 'hover:opacity-80' :'bg-white border border-slate-300 hover:border-indigo-400'
+              ? 'permission-checkbox-checked hover:opacity-80' :'bg-white border border-slate-300 hover:border-blue-400'
           }`}
-          style={isChecked ? { background: '#4F46E5', border: '1px solid #4338CA', minWidth: '20px', minHeight: '20px' } : { minWidth: '20px', minHeight: '20px' }}
+          style={isChecked ? { backgroundColor: '#4F46E5', borderColor: '#4338CA', border: '1px solid #4338CA', minWidth: '20px', minHeight: '20px' } : { minWidth: '20px', minHeight: '20px' }}
           title={`${isChecked ? 'Remove' : 'Grant'} ${role} access to ${feature}`}
         >
           {isChecked && <Check size={12} strokeWidth={3} className="text-white" />}
@@ -790,7 +790,7 @@ function PermissionCell({
       )}
       {/* Tooltip */}
       {hovered && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 bg-slate-800 text-white text-[10px] rounded-xl px-3 py-2 shadow-2xl whitespace-normal pointer-events-none leading-relaxed">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 bg-slate-800 text-white text-[10px] rounded-xl px-3 py-2.5 shadow-2xl whitespace-normal pointer-events-none leading-relaxed">
           <span className="font-semibold">{role}</span>
           {isChecked || isSuperAdmin ? (
             <span className="text-indigo-300"> can access </span>
@@ -798,7 +798,7 @@ function PermissionCell({
             <span className="text-slate-400"> cannot access </span>
           )}
           <span className="font-medium">{feature}</span>
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+          <div className="absolute top-2 -left-1.5 border-4 border-transparent border-r-slate-800" />
         </div>
       )}
     </td>
@@ -871,7 +871,7 @@ function PermissionMatrixSection() {
             <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Legend</span>
             <div className="w-px h-3.5 bg-slate-200" />
             <span className="flex items-center gap-1.5 text-slate-600 font-medium">
-              <span className="w-5 h-5 rounded-[4px] flex items-center justify-center inline-flex" style={{ background: '#4F46E5', border: '1px solid #4338CA' }}>
+              <span className="w-5 h-5 rounded-[4px] flex items-center justify-center inline-flex permission-checkbox-checked" style={{ backgroundColor: '#4F46E5', border: '1px solid #4338CA' }}>
                 <Check size={11} strokeWidth={3} className="text-white" />
               </span>
               Full Access

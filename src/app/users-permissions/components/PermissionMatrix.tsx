@@ -97,7 +97,7 @@ function AccessCell({ has, roleIdx, disabled }: { has: boolean; roleIdx: number;
     return (
       <div className="flex items-center justify-center">
         <div
-          className={`w-5 h-5 flex items-center justify-center rounded-[4px] ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`w-5 h-5 flex items-center justify-center rounded-[4px] permission-checkbox-checked ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           style={{ minWidth: '20px', minHeight: '20px', backgroundColor: '#4F46E5', border: '1px solid #4338CA' }}
         >
           <Check size={12} strokeWidth={3} className="text-white" />
@@ -108,7 +108,7 @@ function AccessCell({ has, roleIdx, disabled }: { has: boolean; roleIdx: number;
   return (
     <div className="flex items-center justify-center">
       <div
-        className={`w-5 h-5 rounded-[4px] bg-white border border-slate-300 ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-indigo-400'}`}
+        className={`w-5 h-5 rounded-[4px] bg-white border border-slate-300 ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-blue-400'}`}
         style={{ minWidth: '20px', minHeight: '20px' }}
       />
     </div>
@@ -230,7 +230,7 @@ export default function PermissionMatrix() {
       <div className="flex items-center gap-5 px-5 py-3 border-t border-border bg-slate-50/60 flex-wrap">
         <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Legend</span>
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-[4px] flex items-center justify-center" style={{ backgroundColor: '#4F46E5', border: '1px solid #4338CA' }}>
+          <div className="w-5 h-5 rounded-[4px] flex items-center justify-center permission-checkbox-checked" style={{ backgroundColor: '#4F46E5', border: '1px solid #4338CA' }}>
             <Check size={11} strokeWidth={3} className="text-white" />
           </div>
           <span className="text-[11px] text-text-secondary font-medium">Full Access</span>
@@ -240,7 +240,7 @@ export default function PermissionMatrix() {
           <span className="text-[11px] text-text-secondary font-medium">No Access</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-[4px] flex items-center justify-center opacity-60" style={{ backgroundColor: '#4F46E5', border: '1px solid #4338CA' }}>
+          <div className="w-5 h-5 rounded-[4px] flex items-center justify-center opacity-60 permission-checkbox-checked" style={{ backgroundColor: '#4F46E5', border: '1px solid #4338CA' }}>
             <Check size={11} strokeWidth={3} className="text-white" />
           </div>
           <span className="text-[11px] text-text-secondary font-medium">Read-only (Super Admin)</span>
