@@ -6,12 +6,24 @@ import {
   Plug, X, CheckCircle, XCircle, AlertCircle, HelpCircle,
   RefreshCw, Eye, EyeOff, Zap, Settings,
   MessageSquare, Users, Shield, Printer, Calendar, Bell,
-  ChevronLeft, Edit2, Globe, Building2,
+  ChevronLeft, Edit2, Globe, Building2, Plus, Trash2,
+  FlaskConical, MapPin, Layers, Info,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type IntegrationStatus = 'Connected' | 'Disconnected' | 'Error' | 'Pending';
+type DeviceStatus = 'Connected' | 'Error';
+
+interface AccessDevice {
+  id: string;
+  name: string;
+  deviceType: string;
+  linkedGate: string;
+  linkedZones: string[];
+  protocol: string;
+  status: DeviceStatus;
+}
 
 interface SiteConfig {
   siteId: string;
@@ -45,6 +57,33 @@ const ALL_SITES = [
   { id: 'site-c', name: 'Site C – Branch' },
   { id: 'site-d', name: 'Site D – Factory' },
 ];
+
+// ─── Mock Gates & Zones per site ─────────────────────────────────────────────
+
+const SITE_GATES: Record<string, string[]> = {
+  'site-a': ['Main Entrance', 'Side Gate A', 'Loading Bay', 'Emergency Exit'],
+  'site-b': ['Warehouse Gate 1', 'Warehouse Gate 2', 'Staff Entrance'],
+  'site-c': ['Branch Front Door', 'Branch Back Door'],
+  'site-d': ['Factory Main Gate', 'Factory Side Gate', 'Delivery Entrance', 'Admin Block Entry'],
+};
+
+const SITE_ZONES: Record<string, string[]> = {
+  'site-a': ['Reception', 'Server Room', 'Executive Floor', 'General Office', 'Parking'],
+  'site-b': ['Warehouse Floor', 'Cold Storage', 'Staff Lounge', 'Loading Dock'],
+  'site-c': ['Public Area', 'Staff Only', 'Meeting Rooms'],
+  'site-d': ['Production Floor', 'Quality Control', 'Admin Zone', 'Restricted Lab'],
+};
+
+// ─── Mock Access Devices ──────────────────────────────────────────────────────
+
+const INITIAL_DEVICES: AccessDevice[] = [
+  { id: 'dev-1', name: 'Turnstile-01', deviceType: 'Turnstile', linkedGate: 'Main Entrance', linkedZones: ['Reception', 'General Office'], protocol: 'OSDP', status: 'Connected' },
+  { id: 'dev-2', name: 'Door-ServerRoom', deviceType: 'Door Controller', linkedGate: 'Side Gate A', linkedZones: ['Server Room'], protocol: 'Wiegand', status: 'Error' },
+  { id: 'dev-3', name: 'Boom-LoadingBay', deviceType: 'Boom Barrier', linkedGate: 'Loading Bay', linkedZones: ['Parking'], protocol: 'API', status: 'Connected' },
+];
+
+const DEVICE_TYPES = ['Turnstile', 'Door Controller', 'Boom Barrier', 'Flap Gate', 'Speed Gate', 'Biometric Reader'];
+const PROTOCOLS = ['API', 'OSDP', 'Wiegand', 'RS-485', 'TCP/IP', 'BACnet'];
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -224,6 +263,381 @@ function StatusBadge({ status }: { status: IntegrationStatus }) {
   );
 }
 
+function DeviceStatusPill({ status }: { status: DeviceStatus }) {
+  if (status === 'Connected') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700 border border-green-100">
+        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+        Connected
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-100">
+      <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+      Error
+    </span>
+  );
+}
+
+// ─── Add Device Modal ─────────────────────────────────────────────────────────
+
+interface AddDeviceModalProps {
+  siteId: string;
+  onClose: () => void;
+  onAdd: (device: AccessDevice) => void;
+  editDevice?: AccessDevice | null;
+}
+
+function AddDeviceModal({ siteId, onClose, onAdd, editDevice }: AddDeviceModalProps) {
+  const gates = SITE_GATES[siteId] || SITE_GATES['site-a'];
+  const zones = SITE_ZONES[siteId] || SITE_ZONES['site-a'];
+
+  const [form, setForm] = useState({
+    name: editDevice?.name || '',
+    deviceType: editDevice?.deviceType || DEVICE_TYPES[0],
+    linkedGate: editDevice?.linkedGate || gates[0],
+    linkedZones: editDevice?.linkedZones || [] as string[],
+    protocol: editDevice?.protocol || PROTOCOLS[0],
+    status: editDevice?.status || 'Connected' as DeviceStatus,
+  });
+
+  const toggleZone = (zone: string) => {
+    setForm(prev => ({
+      ...prev,
+      linkedZones: prev.linkedZones.includes(zone)
+        ? prev.linkedZones.filter(z => z !== zone)
+        : [...prev.linkedZones, zone],
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (!form.name.trim()) return;
+    onAdd({
+      id: editDevice?.id || `dev-${Date.now()}`,
+      name: form.name.trim(),
+      deviceType: form.deviceType,
+      linkedGate: form.linkedGate,
+      linkedZones: form.linkedZones,
+      protocol: form.protocol,
+      status: form.status,
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+              <Shield size={15} className="text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-[14px] font-bold text-text-primary">
+                {editDevice ? 'Edit Device' : 'Add Access Control Device'}
+              </h3>
+              <p className="text-[11px] text-text-muted">Map device to gate & access zone</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface transition-colors">
+            <X size={14} className="text-text-muted" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+          {/* Device ID / Name */}
+          <div>
+            <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">
+              Device ID / Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Turnstile-01, Door-ServerRoom"
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              className="w-full px-3 py-2 text-[13px] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 bg-white"
+            />
+          </div>
+
+          {/* Device Type */}
+          <div>
+            <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">Device Type</label>
+            <select
+              value={form.deviceType}
+              onChange={e => setForm(p => ({ ...p, deviceType: e.target.value }))}
+              className="w-full px-3 py-2 text-[13px] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 bg-white"
+            >
+              {DEVICE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          {/* Linked Gate */}
+          <div>
+            <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">
+              <span className="flex items-center gap-1.5"><MapPin size={11} className="text-text-muted" /> Linked Gate / Entry Point</span>
+            </label>
+            <select
+              value={form.linkedGate}
+              onChange={e => setForm(p => ({ ...p, linkedGate: e.target.value }))}
+              className="w-full px-3 py-2 text-[13px] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 bg-white"
+            >
+              {gates.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </div>
+
+          {/* Linked Access Zones */}
+          <div>
+            <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">
+              <span className="flex items-center gap-1.5"><Layers size={11} className="text-text-muted" /> Linked Access Zone(s)</span>
+            </label>
+            <div className="flex flex-wrap gap-2 p-3 border border-border rounded-lg bg-surface/40 min-h-[44px]">
+              {zones.map(zone => (
+                <button
+                  key={zone}
+                  type="button"
+                  onClick={() => toggleZone(zone)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all ${
+                    form.linkedZones.includes(zone)
+                      ? 'bg-primary-600 text-white border-primary-600' :'bg-white text-text-secondary border-border hover:border-primary-300 hover:text-primary-700'
+                  }`}
+                >
+                  {zone}
+                </button>
+              ))}
+            </div>
+            {form.linkedZones.length === 0 && (
+              <p className="text-[11px] text-text-muted mt-1">Click zones above to select one or more</p>
+            )}
+          </div>
+
+          {/* Protocol */}
+          <div>
+            <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">Protocol / Integration Method</label>
+            <select
+              value={form.protocol}
+              onChange={e => setForm(p => ({ ...p, protocol: e.target.value }))}
+              className="w-full px-3 py-2 text-[13px] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 bg-white"
+            >
+              {PROTOCOLS.map(pr => <option key={pr} value={pr}>{pr}</option>)}
+            </select>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">Status</label>
+            <div className="flex gap-2">
+              {(['Connected', 'Error'] as DeviceStatus[]).map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setForm(p => ({ ...p, status: s }))}
+                  className={`flex-1 py-2 rounded-lg text-[12px] font-semibold border transition-all ${
+                    form.status === s
+                      ? s === 'Connected' ?'bg-green-50 text-green-700 border-green-300' :'bg-red-50 text-red-700 border-red-300' :'bg-white text-text-secondary border-border hover:bg-surface'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="px-5 py-4 border-t border-border flex gap-2.5">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 text-[13px] font-medium text-text-secondary border border-border rounded-lg hover:bg-surface transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!form.name.trim()}
+            className="flex-1 px-4 py-2 text-[13px] font-semibold text-white blue-gradient rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {editDevice ? 'Save Changes' : 'Add Device'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Device & Gate Mapping Section ───────────────────────────────────────────
+
+interface DeviceGateMappingProps {
+  siteId: string;
+  siteName: string;
+}
+
+function DeviceGateMapping({ siteId, siteName }: DeviceGateMappingProps) {
+  const [devices, setDevices] = useState<AccessDevice[]>(INITIAL_DEVICES);
+  const [showModal, setShowModal] = useState(false);
+  const [editDevice, setEditDevice] = useState<AccessDevice | null>(null);
+
+  const handleAdd = (device: AccessDevice) => {
+    if (editDevice) {
+      setDevices(prev => prev.map(d => d.id === device.id ? device : d));
+    } else {
+      setDevices(prev => [...prev, device]);
+    }
+    setEditDevice(null);
+  };
+
+  const handleRemove = (id: string) => {
+    setDevices(prev => prev.filter(d => d.id !== id));
+  };
+
+  const handleEdit = (device: AccessDevice) => {
+    setEditDevice(device);
+    setShowModal(true);
+  };
+
+  return (
+    <>
+      <div className="mt-5 space-y-3">
+        {/* Section Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-[13px] font-bold text-text-primary">Device &amp; Gate Mapping</h3>
+            <p className="text-[11px] text-text-muted mt-0.5">
+              {devices.length} device{devices.length !== 1 ? 's' : ''} mapped for {siteName}
+            </p>
+          </div>
+          <button
+            onClick={() => { setEditDevice(null); setShowModal(true); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white blue-gradient rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-sm"
+          >
+            <Plus size={13} />
+            Add Device
+          </button>
+        </div>
+
+        {/* Info Note */}
+        <div className="flex items-start gap-2.5 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+          <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
+          <p className="text-[12px] text-blue-700 leading-relaxed">
+            Map your physical doors/turnstiles to specific Gates and Access Zones so visitor check-in automatically grants access.
+          </p>
+        </div>
+
+        {/* Devices Table */}
+        {devices.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl bg-surface/40">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-2.5">
+              <Shield size={18} className="text-text-muted" />
+            </div>
+            <p className="text-[13px] font-semibold text-text-secondary">No devices mapped yet</p>
+            <p className="text-[11px] text-text-muted mt-1">Click &quot;Add Device&quot; to link your first hardware device.</p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12px]">
+                <thead>
+                  <tr className="bg-surface border-b border-border">
+                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Device ID / Name</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Type</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Linked Gate</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Access Zone(s)</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Protocol</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Status</th>
+                    <th className="px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {devices.map((device, idx) => (
+                    <tr
+                      key={device.id}
+                      className={`border-b border-border last:border-0 transition-colors hover:bg-primary-50/20 ${idx % 2 === 1 ? 'bg-surface/30' : 'bg-white'}`}
+                    >
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-md bg-red-50 flex items-center justify-center shrink-0">
+                            <Shield size={11} className="text-red-500" />
+                          </div>
+                          <span className="font-semibold text-text-primary whitespace-nowrap">{device.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-text-secondary text-[11px] font-medium whitespace-nowrap">
+                          {device.deviceType}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-1 text-text-secondary whitespace-nowrap">
+                          <MapPin size={10} className="text-text-muted shrink-0" />
+                          {device.linkedGate}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex flex-wrap gap-1">
+                          {device.linkedZones.length === 0 ? (
+                            <span className="text-text-muted">—</span>
+                          ) : device.linkedZones.map(zone => (
+                            <span key={zone} className="px-1.5 py-0.5 rounded bg-primary-50 text-primary-700 text-[10px] font-medium whitespace-nowrap">
+                              {zone}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[11px] font-medium whitespace-nowrap border border-amber-100">
+                          {device.protocol}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <DeviceStatusPill status={device.status} />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleEdit(device)}
+                            title="Edit"
+                            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-primary-50 text-text-muted hover:text-primary-700 transition-colors"
+                          >
+                            <Edit2 size={11} />
+                          </button>
+                          <button
+                            title="Test Connection"
+                            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-amber-50 text-text-muted hover:text-amber-600 transition-colors"
+                          >
+                            <FlaskConical size={11} />
+                          </button>
+                          <button
+                            onClick={() => handleRemove(device.id)}
+                            title="Remove"
+                            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 text-text-muted hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showModal && (
+        <AddDeviceModal
+          siteId={siteId}
+          onClose={() => { setShowModal(false); setEditDevice(null); }}
+          onAdd={handleAdd}
+          editDevice={editDevice}
+        />
+      )}
+    </>
+  );
+}
+
 // ─── Configure Drawer ─────────────────────────────────────────────────────────
 
 interface ConfigDrawerProps {
@@ -267,10 +681,12 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
     setSiteValues(site.fields || {});
   };
 
+  const isAccessControl = integration.id === 'access-control';
+
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1" onClick={onClose} style={{ background: 'rgba(0,0,0,0.35)' }} />
-      <div className="w-full max-w-[480px] bg-white h-full shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-full max-w-[520px] bg-white h-full shadow-2xl flex flex-col overflow-hidden">
 
         {/* Drawer Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
@@ -300,7 +716,7 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
           <button
             onClick={() => { setActiveTab('global'); setEditingSite(null); }}
             className={`flex items-center gap-2 px-5 py-3 text-[13px] font-semibold border-b-2 transition-all ${
-              activeTab === 'global' ?'border-primary-600 text-primary-700' :'border-transparent text-text-muted hover:text-text-secondary'
+              activeTab === 'global' ? 'border-primary-600 text-primary-700' : 'border-transparent text-text-muted hover:text-text-secondary'
             }`}
           >
             <Globe size={14} />
@@ -309,7 +725,7 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
           <button
             onClick={() => { setActiveTab('per-site'); setEditingSite(null); }}
             className={`flex items-center gap-2 px-5 py-3 text-[13px] font-semibold border-b-2 transition-all ${
-              activeTab === 'per-site' ?'border-primary-600 text-primary-700' :'border-transparent text-text-muted hover:text-text-secondary'
+              activeTab === 'per-site' ? 'border-primary-600 text-primary-700' : 'border-transparent text-text-muted hover:text-text-secondary'
             }`}
           >
             <Building2 size={14} />
@@ -508,6 +924,13 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
                   Leave fields empty to inherit global credentials. Filled fields override the global settings for this site only.
                 </p>
               </div>
+
+              {/* Device & Gate Mapping — only for Access Control */}
+              {isAccessControl && (
+                <div className="border-t border-border pt-5">
+                  <DeviceGateMapping siteId={editingSite.siteId} siteName={editingSite.siteName} />
+                </div>
+              )}
             </div>
           )}
         </div>

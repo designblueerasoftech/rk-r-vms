@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, Minus, Info } from 'lucide-react';
+import { Check, Minus, Lock, ChevronDown, ChevronRight, Info, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const roles = ['Super Admin', 'Site Admin', 'Operator', 'Security Guard'];
@@ -10,60 +10,106 @@ const permissions = [
   {
     id: 'perm-group-visitors',
     group: 'Visitor Management',
+    icon: '👤',
     items: [
-      { id: 'perm-checkin',    label: 'Check-in / Check-out Visitors',  access: [true, true, true, false]  },
-      { id: 'perm-preregister',label: 'Create Pre-Registrations',        access: [true, true, true, false]  },
-      { id: 'perm-invite',     label: 'Send WhatsApp Invites',           access: [true, true, true, false]  },
-      { id: 'perm-viewlog',    label: 'View Visitor Log',                access: [true, true, true, true]   },
-      { id: 'perm-exportlog',  label: 'Export Visitor Reports',          access: [true, true, false, false] },
+      { id: 'perm-checkin',     label: 'Check-in / Check-out Visitors',  access: [true, true, true, false]  },
+      { id: 'perm-preregister', label: 'Create Pre-Registrations',        access: [true, true, true, false]  },
+      { id: 'perm-invite',      label: 'Send WhatsApp Invites',           access: [true, true, true, false]  },
+      { id: 'perm-viewlog',     label: 'View Visitor Log',                access: [true, true, true, true]   },
+      { id: 'perm-exportlog',   label: 'Export Visitor Reports',          access: [true, true, false, false] },
     ],
   },
   {
     id: 'perm-group-sites',
     group: 'Sites & Kiosks',
+    icon: '🏢',
     items: [
-      { id: 'perm-managesites', label: 'Add / Edit / Delete Sites',      access: [true, false, false, false] },
-      { id: 'perm-configsite',  label: 'Configure Site Settings',        access: [true, true, false, false]  },
-      { id: 'perm-kiosks',      label: 'Manage Kiosks & Pair Tablets',   access: [true, true, false, false]  },
-      { id: 'perm-gates',       label: 'Configure Gates',                access: [true, true, false, false]  },
+      { id: 'perm-managesites', label: 'Add / Edit / Delete Sites',       access: [true, false, false, false] },
+      { id: 'perm-configsite',  label: 'Configure Site Settings',         access: [true, true, false, false]  },
+      { id: 'perm-kiosks',      label: 'Manage Kiosks & Pair Tablets',    access: [true, true, false, false]  },
+      { id: 'perm-gates',       label: 'Configure Gates',                 access: [true, true, false, false]  },
     ],
   },
   {
     id: 'perm-group-security',
     group: 'Security',
+    icon: '🔒',
     items: [
-      { id: 'perm-blacklist',   label: 'Add / Remove Blacklist Entries', access: [true, true, false, false]  },
-      { id: 'perm-viewblacklist',label: 'View Blacklist',                access: [true, true, true, true]    },
-      { id: 'perm-evacuation',  label: 'Download Evacuation List',       access: [true, true, true, true]    },
-      { id: 'perm-alerts',      label: 'Receive Security Alerts',        access: [true, true, true, true]    },
+      { id: 'perm-blacklist',    label: 'Add / Remove Blacklist Entries', access: [true, true, false, false]  },
+      { id: 'perm-viewblacklist',label: 'View Blacklist',                 access: [true, true, true, true]    },
+      { id: 'perm-evacuation',   label: 'Download Evacuation List',       access: [true, true, true, true]    },
+      { id: 'perm-alerts',       label: 'Receive Security Alerts',        access: [true, true, true, true]    },
     ],
   },
   {
     id: 'perm-group-admin',
     group: 'Administration',
+    icon: '⚙️',
     items: [
-      { id: 'perm-manageusers', label: 'Invite / Manage Users',          access: [true, false, false, false] },
-      { id: 'perm-roles',       label: 'Assign Roles & Permissions',     access: [true, false, false, false] },
-      { id: 'perm-billing',     label: 'Billing & Subscription',         access: [true, false, false, false] },
-      { id: 'perm-integrations',label: 'Manage Integrations',            access: [true, false, false, false] },
-      { id: 'perm-branding',    label: 'Branding & Appearance',          access: [true, true, false, false]  },
-      { id: 'perm-workflows',   label: 'Configure Workflows & Forms',    access: [true, true, false, false]  },
-      { id: 'perm-compliance',  label: 'Compliance & Audit Reports',     access: [true, true, false, false]  },
+      { id: 'perm-manageusers',  label: 'Invite / Manage Users',         access: [true, false, false, false] },
+      { id: 'perm-roles',        label: 'Assign Roles & Permissions',    access: [true, false, false, false] },
+      { id: 'perm-billing',      label: 'Billing & Subscription',        access: [true, false, false, false] },
+      { id: 'perm-integrations', label: 'Manage Integrations',           access: [true, false, false, false] },
+      { id: 'perm-branding',     label: 'Branding & Appearance',         access: [true, true, false, false]  },
+      { id: 'perm-workflows',    label: 'Configure Workflows & Forms',   access: [true, true, false, false]  },
+      { id: 'perm-compliance',   label: 'Compliance & Audit Reports',    access: [true, true, false, false]  },
     ],
   },
 ];
 
-const roleColors = [
-  'text-amber-700 bg-amber-50',
-  'text-primary-700 bg-primary-50',
-  'text-teal-700 bg-teal-50',
-  'text-purple-700 bg-purple-50',
+const roleConfig = [
+  {
+    label: 'Super Admin',
+    color: 'text-amber-700',
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
+    dot: 'bg-amber-500',
+    headerBg: 'bg-amber-50/60',
+  },
+  {
+    label: 'Site Admin',
+    color: 'text-blue-700',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    dot: 'bg-blue-500',
+    headerBg: 'bg-blue-50/60',
+  },
+  {
+    label: 'Operator',
+    color: 'text-teal-700',
+    bg: 'bg-teal-50',
+    border: 'border-teal-200',
+    dot: 'bg-teal-500',
+    headerBg: 'bg-teal-50/60',
+  },
+  {
+    label: 'Security Guard',
+    color: 'text-purple-700',
+    bg: 'bg-purple-50',
+    border: 'border-purple-200',
+    dot: 'bg-purple-500',
+    headerBg: 'bg-purple-50/60',
+  },
 ];
 
-function AccessIcon({ has, partial }: { has: boolean; partial?: boolean }) {
-  if (partial) return <Minus size={14} className="text-warning mx-auto" />;
-  if (has) return <CheckCircle2 size={15} className="text-success mx-auto" />;
-  return <XCircle size={15} className="text-slate-300 mx-auto" />;
+function AccessCell({ has, roleIdx }: { has: boolean; roleIdx: number }) {
+  const cfg = roleConfig[roleIdx];
+  if (has) {
+    return (
+      <div className="flex items-center justify-center">
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${cfg.bg} border ${cfg.border}`}>
+          <Check size={13} strokeWidth={2.5} className={cfg.color} />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center justify-center">
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100">
+        <Lock size={11} strokeWidth={2} className="text-slate-300" />
+      </div>
+    </div>
+  );
 }
 
 export default function PermissionMatrix() {
@@ -94,6 +140,7 @@ export default function PermissionMatrix() {
             onClick={() => toast.info('Custom role editor — Enterprise plan feature')}
             className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white blue-gradient rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-sm"
           >
+            <Sparkles size={12} />
             Create Custom Role
           </button>
         </div>
@@ -101,79 +148,102 @@ export default function PermissionMatrix() {
 
       {/* Matrix table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-border bg-surface/50">
-              <th className="px-5 py-3 text-left text-[10px] font-semibold tracking-widest text-text-muted uppercase w-72">
-                PERMISSION
+            <tr className="border-b border-border">
+              <th className="px-5 py-3.5 text-left text-[11px] font-semibold tracking-widest text-text-muted uppercase bg-slate-50/80 w-72 sticky left-0 z-10">
+                Permission
               </th>
-              {roles.map((role, idx) => (
-                <th key={`mth-${role}`} className="px-4 py-3 text-center w-32">
-                  <span className={`inline-flex text-[11px] font-bold px-2.5 py-1 rounded-badge ${roleColors[idx]}`}>
-                    {role}
-                  </span>
+              {roleConfig.map((role, idx) => (
+                <th key={`mth-${role.label}`} className={`px-4 py-3.5 text-center w-36 ${role.headerBg}`}>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${role.bg} ${role.border}`}>
+                      <span className={`w-2 h-2 rounded-full ${role.dot} shrink-0`} />
+                      <span className={`text-[11px] font-bold ${role.color} whitespace-nowrap`}>{role.label}</span>
+                    </div>
+                    <span className="text-[10px] text-text-muted font-medium">
+                      {permissions.reduce((acc, g) => acc + g.items.filter(i => i.access[idx]).length, 0)}/
+                      {permissions.reduce((acc, g) => acc + g.items.length, 0)} permissions
+                    </span>
+                  </div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {permissions.map((group) => (
-              <React.Fragment key={group.id}>
-                {/* Group header */}
-                <tr
-                  className="border-b border-border bg-slate-50/60 cursor-pointer hover:bg-slate-100/60 transition-colors"
-                  onClick={() => toggleGroup(group.id)}
-                >
-                  <td colSpan={roles.length + 1} className="px-5 py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
-                        {group.group}
-                      </span>
-                      <span className="text-[10px] text-text-muted">
-                        ({group.items.length} permissions)
-                      </span>
-                      <span className="ml-auto text-[11px] text-text-muted">
-                        {expandedGroups.includes(group.id) ? '▲' : '▼'}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-
-                {/* Permission rows */}
-                {expandedGroups.includes(group.id) && group.items.map((item, rowIdx) => (
+            {permissions.map((group) => {
+              const isExpanded = expandedGroups.includes(group.id);
+              return (
+                <React.Fragment key={group.id}>
+                  {/* Group header row */}
                   <tr
-                    key={item.id}
-                    className={`border-b border-border/50 transition-colors hover:bg-primary-50/20 ${rowIdx % 2 === 1 ? 'bg-slate-50/30' : ''}`}
+                    className="border-b border-border cursor-pointer select-none group"
+                    onClick={() => toggleGroup(group.id)}
+                    style={{ background: 'linear-gradient(to right, #f8fafc, #f1f5f9)' }}
                   >
-                    <td className="px-5 py-2.5">
-                      <span className="text-[13px] text-text-secondary">{item.label}</span>
+                    <td colSpan={roles.length + 1} className="px-5 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-5 h-5 flex items-center justify-center rounded text-text-muted group-hover:text-text-secondary transition-colors">
+                          {isExpanded
+                            ? <ChevronDown size={14} strokeWidth={2.5} />
+                            : <ChevronRight size={14} strokeWidth={2.5} />
+                          }
+                        </div>
+                        <span className="text-[11px]">{group.icon}</span>
+                        <span className="text-[12px] font-bold text-text-secondary uppercase tracking-wider">
+                          {group.group}
+                        </span>
+                        <span className="text-[10px] font-medium text-text-muted bg-white border border-border px-1.5 py-0.5 rounded-md">
+                          {group.items.length}
+                        </span>
+                      </div>
                     </td>
-                    {item.access.map((has, roleIdx) => (
-                      <td key={`${item.id}-role-${roleIdx}`} className="px-4 py-2.5 text-center">
-                        <AccessIcon has={has} />
-                      </td>
-                    ))}
                   </tr>
-                ))}
-              </React.Fragment>
-            ))}
+
+                  {/* Permission rows */}
+                  {isExpanded && group.items.map((item, rowIdx) => (
+                    <tr
+                      key={item.id}
+                      className={`border-b border-border/60 transition-colors hover:bg-slate-50/60 ${rowIdx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'}`}
+                    >
+                      <td className="px-5 py-3 sticky left-0 bg-inherit">
+                        <span className="text-[13px] text-text-secondary">{item.label}</span>
+                      </td>
+                      {item.access.map((has, roleIdx) => (
+                        <td key={`${item.id}-role-${roleIdx}`} className="px-4 py-3 text-center">
+                          <AccessCell has={has} roleIdx={roleIdx} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 px-5 py-3 border-t border-border bg-surface/50 flex-wrap">
-        <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wide">Legend</span>
-        {[
-          { icon: <CheckCircle2 size={13} className="text-success" />, label: 'Full Access' },
-          { icon: <XCircle size={13} className="text-slate-300" />, label: 'No Access' },
-          { icon: <Minus size={13} className="text-warning" />, label: 'Partial / Restricted' },
-        ].map((l) => (
-          <div key={`legend-${l.label}`} className="flex items-center gap-1.5">
-            {l.icon}
-            <span className="text-[11px] text-text-secondary">{l.label}</span>
+      <div className="flex items-center gap-5 px-5 py-3 border-t border-border bg-slate-50/60 flex-wrap">
+        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Legend</span>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center bg-blue-50 border border-blue-200">
+            <Check size={11} strokeWidth={2.5} className="text-blue-700" />
           </div>
-        ))}
+          <span className="text-[11px] text-text-secondary font-medium">Access Granted</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center bg-slate-50 border border-slate-100">
+            <Lock size={10} strokeWidth={2} className="text-slate-300" />
+          </div>
+          <span className="text-[11px] text-text-secondary font-medium">No Access</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center bg-amber-50 border border-amber-200">
+            <Minus size={11} strokeWidth={2.5} className="text-amber-600" />
+          </div>
+          <span className="text-[11px] text-text-secondary font-medium">Partial / Restricted</span>
+        </div>
         <span className="ml-auto text-[11px] text-text-muted">
           Custom roles available on Enterprise plan
         </span>
