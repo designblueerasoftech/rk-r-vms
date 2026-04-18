@@ -766,7 +766,7 @@ function PermissionCell({
           <div className="relative group">
             <div
               className="w-5 h-5 rounded-[4px] flex items-center justify-center opacity-60 cursor-not-allowed permission-checkbox-checked"
-              style={{ backgroundColor: '#4F46E5', borderColor: '#4338CA', border: '1px solid #4338CA', minWidth: '20px', minHeight: '20px' }}
+              style={{ backgroundColor: '#405189', borderColor: '#364475', border: '1px solid #364475', minWidth: '20px', minHeight: '20px' }}
             >
               <Check size={12} strokeWidth={3} className="text-white" />
             </div>
@@ -782,7 +782,7 @@ function PermissionCell({
             isChecked
               ? 'permission-checkbox-checked hover:opacity-80' :'bg-white border border-slate-300 hover:border-blue-400'
           }`}
-          style={isChecked ? { backgroundColor: '#4F46E5', borderColor: '#4338CA', border: '1px solid #4338CA', minWidth: '20px', minHeight: '20px' } : { minWidth: '20px', minHeight: '20px' }}
+          style={isChecked ? { backgroundColor: '#405189', borderColor: '#364475', border: '1px solid #364475', minWidth: '20px', minHeight: '20px' } : { minWidth: '20px', minHeight: '20px' }}
           title={`${isChecked ? 'Remove' : 'Grant'} ${role} access to ${feature}`}
         >
           {isChecked && <Check size={12} strokeWidth={3} className="text-white" />}
@@ -871,7 +871,7 @@ function PermissionMatrixSection() {
             <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Legend</span>
             <div className="w-px h-3.5 bg-slate-200" />
             <span className="flex items-center gap-1.5 text-slate-600 font-medium">
-              <span className="w-5 h-5 rounded-[4px] flex items-center justify-center inline-flex permission-checkbox-checked" style={{ backgroundColor: '#4F46E5', border: '1px solid #4338CA' }}>
+              <span className="w-5 h-5 rounded-[4px] flex items-center justify-center inline-flex permission-checkbox-checked" style={{ backgroundColor: '#405189', border: '1px solid #364475' }}>
                 <Check size={11} strokeWidth={3} className="text-white" />
               </span>
               Full Access
