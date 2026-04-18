@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import AppLayout from '@/components/AppLayout';
-import { HelpCircle, RefreshCw, Download, Search, Plus, Upload, X, ChevronDown, Check, ToggleLeft, ToggleRight, Crown, Shield, UserCheck, Eye, Headphones, Users, Calendar, Camera, CheckCircle2, XCircle, Send, FileText, Link2, Loader2, ChevronRight, RotateCcw } from 'lucide-react';
+import { HelpCircle, RefreshCw, Download, Search, Plus, Upload, X, ChevronDown, Check, ToggleLeft, ToggleRight, Crown, Shield, UserCheck, Eye, Headphones, Users, Calendar, Camera, CheckCircle2, XCircle, Send, FileText, Link2, Loader2, ChevronRight, RotateCcw, Lock } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -732,13 +732,87 @@ function EmployeeDirectoryTab() {
 
 type PermissionsState = Record<RoleType, Record<string, boolean>>;
 
+const ROLE_MATRIX_CONFIG: Record<RoleType, { dot: string; badge: string; icon: React.ReactNode; lockColor: string }> = {
+  'Super Admin': { dot: 'bg-amber-500', badge: 'bg-amber-50 text-amber-700 border-amber-200', icon: <Crown size={13} className="text-amber-600" />, lockColor: 'text-amber-400' },
+  'Site Admin': { dot: 'bg-blue-500', badge: 'bg-blue-50 text-blue-700 border-blue-200', icon: <Shield size={13} className="text-blue-600" />, lockColor: 'text-blue-300' },
+  'Front Desk Admin': { dot: 'bg-green-500', badge: 'bg-green-50 text-green-700 border-green-200', icon: <UserCheck size={13} className="text-green-600" />, lockColor: 'text-green-300' },
+  'Security Admin': { dot: 'bg-purple-500', badge: 'bg-purple-50 text-purple-700 border-purple-200', icon: <Eye size={13} className="text-purple-600" />, lockColor: 'text-purple-300' },
+  'Host': { dot: 'bg-orange-500', badge: 'bg-orange-50 text-orange-700 border-orange-200', icon: <Users size={13} className="text-orange-600" />, lockColor: 'text-orange-300' },
+  'Assistant': { dot: 'bg-pink-500', badge: 'bg-pink-50 text-pink-700 border-pink-200', icon: <Headphones size={13} className="text-pink-600" />, lockColor: 'text-pink-300' },
+};
+
+function PermissionCell({
+  role,
+  feature,
+  isChecked,
+  onToggle,
+}: {
+  role: RoleType;
+  feature: string;
+  isChecked: boolean;
+  onToggle: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const isSuperAdmin = role === 'Super Admin';
+  const cfg = ROLE_MATRIX_CONFIG[role];
+
+  return (
+    <td
+      className="px-2 py-2.5 text-center relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {isSuperAdmin ? (
+        <div className="flex items-center justify-center">
+          <div className="relative group">
+            <div className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center shadow-sm">
+              <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-inner" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-100 border border-amber-300 rounded-full flex items-center justify-center">
+              <Lock size={8} className="text-amber-600" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={onToggle}
+          className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mx-auto transition-all duration-200 hover:scale-110 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+            isChecked
+              ? 'bg-emerald-500 border-emerald-400 shadow-sm focus:ring-emerald-300'
+              : 'bg-white border-slate-200 hover:border-slate-300 focus:ring-slate-200'
+          }`}
+          title={`${isChecked ? 'Remove' : 'Grant'} ${role} access to ${feature}`}
+        >
+          {isChecked ? (
+            <div className="w-3.5 h-3.5 rounded-full bg-white/90 shadow-inner" />
+          ) : (
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-200" />
+          )}
+        </button>
+      )}
+      {/* Tooltip */}
+      {hovered && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 bg-slate-800 text-white text-[10px] rounded-xl px-3 py-2 shadow-2xl whitespace-normal pointer-events-none leading-relaxed">
+          <span className="font-semibold">{role}</span>
+          {isChecked || isSuperAdmin ? (
+            <span className="text-emerald-300"> can access </span>
+          ) : (
+            <span className="text-slate-400"> cannot access </span>
+          )}
+          <span className="font-medium">{feature}</span>
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+        </div>
+      )}
+    </td>
+  );
+}
+
 function PermissionMatrixSection() {
   const [permissions, setPermissions] = useState<PermissionsState>(() =>
     JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS))
   );
   const [saved, setSaved] = useState(false);
   const [search, setSearch] = useState('');
-  const [tooltipCell, setTooltipCell] = useState<{ role: RoleType; feature: string } | null>(null);
   const [showHelp, setShowHelp] = useState(false);
 
   const filteredFeatures = FEATURE_MODULES.filter(f =>
@@ -753,142 +827,153 @@ function PermissionMatrixSection() {
       return next;
     });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2500);
   }, []);
 
   const handleReset = () => {
     setPermissions(JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const roleBadgeColors: Record<RoleType, string> = {
-    'Super Admin': 'bg-amber-50 text-amber-700 border-amber-200',
-    'Site Admin': 'bg-blue-50 text-blue-700 border-blue-200',
-    'Front Desk Admin': 'bg-green-50 text-green-700 border-green-200',
-    'Security Admin': 'bg-purple-50 text-purple-700 border-purple-200',
-    'Host': 'bg-orange-50 text-orange-700 border-orange-200',
-    'Assistant': 'bg-pink-50 text-pink-700 border-pink-200',
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
-    <div className="bg-white rounded-card card-shadow border border-border overflow-hidden">
+    <div
+      className="rounded-2xl border border-slate-200/80 overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.90) 100%)',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)',
+      }}
+    >
       {/* Matrix Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-wrap gap-3">
+      <div
+        className="flex items-center justify-between px-6 py-4 border-b border-slate-200/70 flex-wrap gap-3"
+        style={{ background: 'linear-gradient(to right, rgba(248,250,252,0.8), rgba(241,245,249,0.6))' }}
+      >
         <div className="flex items-center gap-2">
-          <h2 className="text-[15px] font-bold text-text-primary">Roles & Permissions Matrix</h2>
-          <div className="relative" onMouseEnter={() => setShowHelp(true)} onMouseLeave={() => setShowHelp(false)}>
+          <h2 className="text-[15px] font-bold text-text-primary">Roles &amp; Permissions Matrix</h2>
+          <div
+            className="relative inline-flex"
+            onMouseEnter={() => setShowHelp(true)}
+            onMouseLeave={() => setShowHelp(false)}
+          >
             <HelpCircle size={15} className="text-text-muted cursor-help" />
             {showHelp && (
-              <div className="absolute left-6 top-0 z-50 w-72 bg-slate-800 text-white text-[11px] rounded-lg px-3 py-2 shadow-xl whitespace-normal">
-                Click any checkbox to toggle a permission ON or OFF for that role. Super Admin permissions are fixed and cannot be changed. Changes are auto-saved.
+              <div className="absolute left-6 top-0 z-50 w-72 bg-slate-800 text-white text-[11px] rounded-xl px-3 py-2.5 shadow-2xl whitespace-normal leading-relaxed">
+                Click any circle to toggle a permission ON or OFF for that role. Super Admin permissions are fixed and always enabled. Changes are auto-saved instantly.
+                <div className="absolute top-2 -left-1.5 border-4 border-transparent border-r-slate-800" />
               </div>
             )}
           </div>
         </div>
+
         <div className="flex items-center gap-3 flex-wrap">
           {/* Legend */}
-          <div className="flex items-center gap-3 px-3 py-1.5 bg-surface rounded-lg border border-border text-[11px]">
-            <span className="font-semibold text-text-muted">Legend:</span>
-            <span className="flex items-center gap-1 text-text-secondary">✅ <span>= Full Access</span></span>
-            <span className="flex items-center gap-1 text-text-secondary">⬜ <span>= No Access</span></span>
+          <div className="flex items-center gap-3 px-3.5 py-2 bg-white/70 rounded-xl border border-slate-200/80 text-[11px] shadow-sm">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Legend</span>
+            <div className="w-px h-3.5 bg-slate-200" />
+            <span className="flex items-center gap-1.5 text-slate-600 font-medium">
+              <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block shadow-sm" />
+              Full Access
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-400 font-medium">
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 inline-block" />
+              No Access
+            </span>
           </div>
+
+          {/* Auto-save indicator */}
           {saved && (
-            <span className="flex items-center gap-1 text-[11px] text-green-600 font-semibold bg-green-50 border border-green-200 px-2 py-1 rounded-lg">
-              <CheckCircle2 size={12} /> Saved
+            <span className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl shadow-sm">
+              <CheckCircle2 size={13} className="text-emerald-500" /> Saved
             </span>
           )}
+
+          {/* Reset button */}
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-secondary border border-border rounded-lg hover:bg-surface bg-white transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-[12px] font-medium text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 bg-white/80 transition-all duration-150 shadow-sm"
           >
-            <RotateCcw size={13} /> Reset to Default Permissions
+            <RotateCcw size={13} /> Reset to Default
           </button>
         </div>
       </div>
 
       {/* Search */}
-      <div className="px-5 py-3 border-b border-border">
+      <div className="px-6 py-3 border-b border-slate-200/60" style={{ background: 'rgba(248,250,252,0.5)' }}>
         <div className="relative max-w-xs">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search feature modules..."
-            className="pl-8 pr-3 py-2 text-[12px] bg-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 w-full"
+            className="pl-8 pr-3 py-2 text-[12px] bg-white/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 w-full shadow-sm"
           />
         </div>
       </div>
 
       {/* Scrollable Matrix Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-[12px]" style={{ minWidth: '900px' }}>
+        <table className="w-full text-[12px]" style={{ minWidth: '960px' }}>
           <thead>
-            <tr className="bg-surface border-b border-border">
-              <th className="px-4 py-3 text-left text-[10px] font-bold text-text-muted uppercase tracking-wider sticky left-0 bg-surface z-10 min-w-[200px]">
+            <tr
+              className="border-b border-slate-200/70"
+              style={{ background: 'linear-gradient(to right, rgba(248,250,252,0.9), rgba(241,245,249,0.7))' }}
+            >
+              {/* Feature column header */}
+              <th className="px-5 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest sticky left-0 z-10 min-w-[200px]"
+                style={{ background: 'rgba(248,250,252,0.95)' }}
+              >
                 Module / Feature
               </th>
-              {ORDERED_ROLES.map(role => (
-                <th key={role} className="px-3 py-3 text-center min-w-[120px]">
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold border ${roleBadgeColors[role]}`}>
-                    {ROLE_CONFIG[role].icon}
-                    <span className="truncate max-w-[80px]">{role}</span>
-                  </span>
-                </th>
-              ))}
+              {ORDERED_ROLES.map(role => {
+                const cfg = ROLE_MATRIX_CONFIG[role];
+                const count = FEATURE_MODULES.filter(f => permissions[role][f]).length;
+                return (
+                  <th key={role} className="px-2 py-3.5 text-center min-w-[110px]">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${cfg.badge} shadow-sm`}>
+                        {cfg.icon}
+                        <span className="truncate max-w-[72px]">{role}</span>
+                        {role === 'Super Admin' && <Lock size={9} className="text-amber-500 shrink-0" />}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {count}/{FEATURE_MODULES.length}
+                      </span>
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {filteredFeatures.map((feature, rowIdx) => (
               <tr
                 key={feature}
-                className={`border-b border-border/50 transition-colors hover:bg-primary-50/20 ${rowIdx % 2 === 1 ? 'bg-slate-50/40' : ''}`}
+                className={`border-b border-slate-100/80 transition-colors duration-100 hover:bg-primary-50/30 ${rowIdx % 2 === 1 ? 'bg-slate-50/40' : 'bg-white/60'}`}
               >
-                <td className="px-4 py-2.5 font-medium text-text-secondary sticky left-0 bg-inherit z-10 whitespace-nowrap">
+                <td
+                  className="px-5 py-3 font-medium text-slate-600 sticky left-0 z-10 whitespace-nowrap text-[12px]"
+                  style={{ background: rowIdx % 2 === 1 ? 'rgba(248,250,252,0.95)' : 'rgba(255,255,255,0.95)' }}
+                >
                   {feature}
                 </td>
-                {ORDERED_ROLES.map(role => {
-                  const isChecked = permissions[role][feature] ?? false;
-                  const isSuperAdmin = role === 'Super Admin';
-                  const isHovered = tooltipCell?.role === role && tooltipCell?.feature === feature;
-                  return (
-                    <td
-                      key={role}
-                      className="px-3 py-2.5 text-center relative"
-                      onMouseEnter={() => setTooltipCell({ role, feature })}
-                      onMouseLeave={() => setTooltipCell(null)}
-                    >
-                      {isSuperAdmin ? (
-                        <span className="text-lg select-none">✅</span>
-                      ) : (
-                        <button
-                          onClick={() => togglePermission(role, feature)}
-                          className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center mx-auto transition-all duration-150 ${
-                            isChecked
-                              ? 'bg-primary-600 border-primary-600 text-white hover:bg-primary-700' :'bg-white border-slate-200 hover:border-primary-300 hover:bg-primary-50'
-                          }`}
-                          title={`${isChecked ? 'Remove' : 'Grant'} ${role} access to ${feature}`}
-                        >
-                          {isChecked ? <Check size={14} className="text-white" /> : <span className="w-3 h-3 block" />}
-                        </button>
-                      )}
-                      {/* Tooltip */}
-                      {isHovered && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-48 bg-slate-800 text-white text-[10px] rounded-lg px-2.5 py-1.5 shadow-xl whitespace-normal pointer-events-none">
-                          {isChecked || isSuperAdmin
-                            ? `${role} can access ${feature}`
-                            : `${role} cannot access ${feature}`}
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
-                        </div>
-                      )}
-                    </td>
-                  );
-                })}
+                {ORDERED_ROLES.map(role => (
+                  <PermissionCell
+                    key={role}
+                    role={role}
+                    feature={feature}
+                    isChecked={permissions[role][feature] ?? false}
+                    onToggle={() => togglePermission(role, feature)}
+                  />
+                ))}
               </tr>
             ))}
             {filteredFeatures.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-text-muted text-[13px]">No modules match your search</td>
+                <td colSpan={7} className="px-4 py-10 text-center text-text-muted text-[13px]">
+                  No modules match your search
+                </td>
               </tr>
             )}
           </tbody>
@@ -896,9 +981,14 @@ function PermissionMatrixSection() {
       </div>
 
       {/* Footer note */}
-      <div className="px-5 py-3 border-t border-border bg-surface/50 flex items-center gap-2">
-        <Shield size={13} className="text-amber-600 shrink-0" />
-        <p className="text-[11px] text-text-muted">Super Admin row is read-only — Super Admins always have full access to all modules.</p>
+      <div
+        className="px-6 py-3 border-t border-slate-200/60 flex items-center gap-2"
+        style={{ background: 'linear-gradient(to right, rgba(255,251,235,0.5), rgba(254,252,232,0.3))' }}
+      >
+        <Lock size={13} className="text-amber-500 shrink-0" />
+        <p className="text-[11px] text-slate-500">
+          <span className="font-semibold text-amber-700">Super Admin</span> row is read-only — Super Admins always have full access to all modules and cannot be restricted.
+        </p>
       </div>
     </div>
   );
@@ -1004,7 +1094,7 @@ export default function UsersPermissionsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 text-[13px] font-semibold border-b-2 transition-all duration-150 -mb-px ${activeTab === tab.id ? 'border-primary-600 text-primary-700' : 'border-transparent text-text-muted hover:text-text-primary hover:border-slate-300'}`}
+                className={`px-5 py-3 text-[13px] font-semibold border-b-2 transition-all duration-150 -mb-px ${activeTab === tab.id ? 'border-primary-600 text-primary-700' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-slate-300'}`}
               >
                 {tab.label}
               </button>
