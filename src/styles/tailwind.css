@@ -124,4 +124,9 @@
     background: rgba(0,0,0,0.15);
     border-radius: 2px;
   }
+
+  .permission-checkbox-checked {
+    background-color: #405189 !important;
+    border-color: #364475 !important;
+  }
 }
