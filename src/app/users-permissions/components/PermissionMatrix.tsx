@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Check, Minus, Lock, ChevronDown, ChevronRight, Info, Sparkles } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Info, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const roles = ['Super Admin', 'Site Admin', 'Operator', 'Security Guard'];
@@ -92,22 +92,25 @@ const roleConfig = [
   },
 ];
 
-function AccessCell({ has, roleIdx }: { has: boolean; roleIdx: number }) {
-  const cfg = roleConfig[roleIdx];
+function AccessCell({ has, roleIdx, disabled }: { has: boolean; roleIdx: number; disabled?: boolean }) {
   if (has) {
     return (
       <div className="flex items-center justify-center">
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${cfg.bg} border ${cfg.border}`}>
-          <Check size={13} strokeWidth={2.5} className={cfg.color} />
+        <div
+          className={`w-5 h-5 flex items-center justify-center rounded-[4px] bg-primary-600 border border-primary-700 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          style={{ minWidth: '20px', minHeight: '20px' }}
+        >
+          <Check size={12} strokeWidth={3} className="text-white" />
         </div>
       </div>
     );
   }
   return (
     <div className="flex items-center justify-center">
-      <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100">
-        <Lock size={11} strokeWidth={2} className="text-slate-300" />
-      </div>
+      <div
+        className={`w-5 h-5 rounded-[4px] bg-white border border-slate-300 ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-primary-400'}`}
+        style={{ minWidth: '20px', minHeight: '20px' }}
+      />
     </div>
   );
 }
@@ -211,7 +214,7 @@ export default function PermissionMatrix() {
                       </td>
                       {item.access.map((has, roleIdx) => (
                         <td key={`${item.id}-role-${roleIdx}`} className="px-4 py-3 text-center">
-                          <AccessCell has={has} roleIdx={roleIdx} />
+                          <AccessCell has={has} roleIdx={roleIdx} disabled={roleIdx === 0} />
                         </td>
                       ))}
                     </tr>
@@ -227,22 +230,20 @@ export default function PermissionMatrix() {
       <div className="flex items-center gap-5 px-5 py-3 border-t border-border bg-slate-50/60 flex-wrap">
         <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Legend</span>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center bg-blue-50 border border-blue-200">
-            <Check size={11} strokeWidth={2.5} className="text-blue-700" />
+          <div className="w-5 h-5 rounded-[4px] flex items-center justify-center bg-primary-600 border border-primary-700">
+            <Check size={11} strokeWidth={3} className="text-white" />
           </div>
-          <span className="text-[11px] text-text-secondary font-medium">Access Granted</span>
+          <span className="text-[11px] text-text-secondary font-medium">Full Access</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center bg-slate-50 border border-slate-100">
-            <Lock size={10} strokeWidth={2} className="text-slate-300" />
-          </div>
+          <div className="w-5 h-5 rounded-[4px] bg-white border border-slate-300" />
           <span className="text-[11px] text-text-secondary font-medium">No Access</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center bg-amber-50 border border-amber-200">
-            <Minus size={11} strokeWidth={2.5} className="text-amber-600" />
+          <div className="w-5 h-5 rounded-[4px] flex items-center justify-center bg-primary-600 border border-primary-700 opacity-60">
+            <Check size={11} strokeWidth={3} className="text-white" />
           </div>
-          <span className="text-[11px] text-text-secondary font-medium">Partial / Restricted</span>
+          <span className="text-[11px] text-text-secondary font-medium">Read-only (Super Admin)</span>
         </div>
         <span className="ml-auto text-[11px] text-text-muted">
           Custom roles available on Enterprise plan

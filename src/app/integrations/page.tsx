@@ -438,10 +438,7 @@ function AddDeviceModal({ siteId, onClose, onAdd, editDevice }: AddDeviceModalPr
                   key={s}
                   type="button"
                   onClick={() => setForm(p => ({ ...p, status: s }))}
-                  className={`flex-1 py-2 rounded-lg text-[12px] font-semibold border transition-all ${
-                    form.status === s
-                      ? s === 'Connected' ?'bg-green-50 text-green-700 border-green-300' :'bg-red-50 text-red-700 border-red-300' :'bg-white text-text-secondary border-border hover:border-primary-300 hover:text-primary-700'
-                  }`}
+                  className={`flex-1 py-2 rounded-lg text-[12px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {s}
                 </button>
@@ -953,7 +950,7 @@ function AccessControlDrawer({ integration, onClose }: ACDrawerProps) {
               setAutoSaved(true);
               onClose();
             }}
-            className="flex-1 px-4 py-2 text-[13px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-all shadow-sm"
+            className="flex-1 px-4 py-2 text-[13px] font-semibold text-white blue-gradient rounded-lg hover:opacity-90 transition-all shadow-sm"
           >
             Save &amp; Connect
           </button>
@@ -1246,7 +1243,7 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
           </button>
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 text-[13px] font-semibold text-white blue-gradient rounded-lg hover:opacity-90 transition-all shadow-sm"
+            className="flex-1 px-4 py-2 text-[13px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg hover:opacity-90 transition-all shadow-sm"
           >
             {editingSite ? 'Save Site Config' : 'Save & Connect'}
           </button>
