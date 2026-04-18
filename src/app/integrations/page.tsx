@@ -2,18 +2,15 @@
 
 import React, { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
-import {
-  Plug, X, CheckCircle, XCircle, AlertCircle, HelpCircle,
-  RefreshCw, Eye, EyeOff, Zap, Settings,
-  MessageSquare, Users, Shield, Printer, Calendar, Bell,
-  ChevronLeft, Edit2, Globe, Building2, Plus, Trash2,
-  FlaskConical, MapPin, Layers, Info,
-} from 'lucide-react';
+import { Plug, X, CheckCircle, XCircle, AlertCircle, HelpCircle, RefreshCw, Eye, EyeOff, Zap, Settings, MessageSquare, Users, Shield, Printer, Calendar, Bell, ChevronLeft, Edit2, Globe, Building2, MapPin, Layers, Info, Lock,  } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type IntegrationStatus = 'Connected' | 'Disconnected' | 'Error' | 'Pending';
 type DeviceStatus = 'Connected' | 'Error';
+
+type ACBrand =
+  | 'Matrix COSEC' |'Suprema (BioStar)' |'Honeywell' |'Bosch' |'HID Global' |'ZKTeco' |'eSSL' |'Godrej' |'Tyco' |'Custom / Other' |'';
 
 interface AccessDevice {
   id: string;
@@ -85,9 +82,42 @@ const INITIAL_DEVICES: AccessDevice[] = [
 const DEVICE_TYPES = ['Turnstile', 'Door Controller', 'Boom Barrier', 'Flap Gate', 'Speed Gate', 'Biometric Reader'];
 const PROTOCOLS = ['API', 'OSDP', 'Wiegand', 'RS-485', 'TCP/IP', 'BACnet'];
 
+const AC_BRANDS: ACBrand[] = [
+  'Matrix COSEC',
+  'Suprema (BioStar)',
+  'Honeywell',
+  'Bosch',
+  'HID Global',
+  'ZKTeco',
+  'eSSL',
+  'Godrej',
+  'Tyco',
+  'Custom / Other',
+];
+
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const INTEGRATIONS: Integration[] = [
+  // Access Control is FIRST
+  {
+    id: 'access-control',
+    name: 'Access Control',
+    category: 'Physical Security',
+    description: 'Integrate with door controllers, turnstiles, and physical security systems.',
+    status: 'Error',
+    configuredSites: 2,
+    totalSites: 4,
+    icon: <Shield size={22} />,
+    iconBg: 'bg-red-500',
+    globalFields: [],
+    siteFields: [],
+    siteConfigs: [
+      { siteId: 'site-a', siteName: 'Site A – HQ', status: 'Connected', lastSync: '1 hour ago', fields: {} },
+      { siteId: 'site-b', siteName: 'Site B – Warehouse', status: 'Error', lastSync: '2 hours ago', fields: {} },
+      { siteId: 'site-c', siteName: 'Site C – Branch', status: 'Disconnected', fields: {} },
+      { siteId: 'site-d', siteName: 'Site D – Factory', status: 'Disconnected', fields: {} },
+    ],
+  },
   {
     id: 'whatsapp',
     name: 'WhatsApp Business API',
@@ -138,32 +168,6 @@ const INTEGRATIONS: Integration[] = [
       { siteId: 'site-b', siteName: 'Site B – Warehouse', status: 'Connected', lastSync: '15 min ago', fields: {} },
       { siteId: 'site-c', siteName: 'Site C – Branch', status: 'Connected', lastSync: '20 min ago', fields: {} },
       { siteId: 'site-d', siteName: 'Site D – Factory', status: 'Connected', lastSync: '30 min ago', fields: {} },
-    ],
-  },
-  {
-    id: 'access-control',
-    name: 'Access Control',
-    category: 'Physical Security',
-    description: 'Integrate with door controllers and turnstiles for automated gate access.',
-    status: 'Error',
-    configuredSites: 2,
-    totalSites: 4,
-    icon: <Shield size={22} />,
-    iconBg: 'bg-red-500',
-    globalFields: [
-      { key: 'system_type', label: 'System Type', type: 'text', placeholder: 'e.g. HID Origo, Lenel S2' },
-      { key: 'api_key', label: 'Global API Key', type: 'password', placeholder: 'Enter API Key' },
-    ],
-    siteFields: [
-      { key: 'controller_ip', label: 'Controller IP Address', type: 'text', placeholder: '192.168.1.100' },
-      { key: 'site_api_key', label: 'Site API Key', type: 'password', placeholder: 'Enter site-specific API Key' },
-      { key: 'port', label: 'Port', type: 'text', placeholder: '8080' },
-    ],
-    siteConfigs: [
-      { siteId: 'site-a', siteName: 'Site A – HQ', status: 'Connected', lastSync: '1 hour ago', fields: {} },
-      { siteId: 'site-b', siteName: 'Site B – Warehouse', status: 'Error', lastSync: '2 hours ago', fields: {} },
-      { siteId: 'site-c', siteName: 'Site C – Branch', status: 'Disconnected', fields: {} },
-      { siteId: 'site-d', siteName: 'Site D – Factory', status: 'Disconnected', fields: {} },
     ],
   },
   {
@@ -220,7 +224,7 @@ const INTEGRATIONS: Integration[] = [
   },
   {
     id: 'calendar',
-    name: 'Calendar (Google / Outlook)',
+    name: 'Calendar (Google Workspace / Microsoft 365)',
     category: 'Productivity',
     description: 'Sync meeting invites and auto-create visitor pre-registrations from calendar events.',
     status: 'Pending',
@@ -338,7 +342,7 @@ function AddDeviceModal({ siteId, onClose, onAdd, editDevice }: AddDeviceModalPr
               <h3 className="text-[14px] font-bold text-text-primary">
                 {editDevice ? 'Edit Device' : 'Add Access Control Device'}
               </h3>
-              <p className="text-[11px] text-text-muted">Map device to gate & access zone</p>
+              <p className="text-[11px] text-text-muted">Map device to gate &amp; access zone</p>
             </div>
           </div>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface transition-colors">
@@ -436,7 +440,7 @@ function AddDeviceModal({ siteId, onClose, onAdd, editDevice }: AddDeviceModalPr
                   onClick={() => setForm(p => ({ ...p, status: s }))}
                   className={`flex-1 py-2 rounded-lg text-[12px] font-semibold border transition-all ${
                     form.status === s
-                      ? s === 'Connected' ?'bg-green-50 text-green-700 border-green-300' :'bg-red-50 text-red-700 border-red-300' :'bg-white text-text-secondary border-border hover:bg-surface'
+                      ? s === 'Connected' ?'bg-green-50 text-green-700 border-green-300' :'bg-red-50 text-red-700 border-red-300' :'bg-white text-text-secondary border-border hover:border-primary-300 hover:text-primary-700'
                   }`}
                 >
                   {s}
@@ -467,178 +471,499 @@ function AddDeviceModal({ siteId, onClose, onAdd, editDevice }: AddDeviceModalPr
   );
 }
 
-// ─── Device & Gate Mapping Section ───────────────────────────────────────────
+// ─── Access Control Brand Fields ──────────────────────────────────────────────
 
-interface DeviceGateMappingProps {
-  siteId: string;
-  siteName: string;
+interface ACFieldDef {
+  key: string;
+  label: string;
+  type: 'text' | 'password' | 'url' | 'select';
+  placeholder?: string;
+  note?: string;
+  options?: string[];
 }
 
-function DeviceGateMapping({ siteId, siteName }: DeviceGateMappingProps) {
-  const [devices, setDevices] = useState<AccessDevice[]>(INITIAL_DEVICES);
-  const [showModal, setShowModal] = useState(false);
-  const [editDevice, setEditDevice] = useState<AccessDevice | null>(null);
+function getACFields(brand: ACBrand): ACFieldDef[] {
+  switch (brand) {
+    case 'Matrix COSEC':
+      return [
+        { key: 'base_url', label: 'COSEC Base URL', type: 'url', placeholder: 'http://192.168.1.100:8080' },
+        { key: 'username', label: 'Username', type: 'text', placeholder: 'Enter username' },
+        { key: 'password', label: 'Password', type: 'password', placeholder: 'Enter password', note: 'Password is encrypted after save' },
+      ];
+    case 'Suprema (BioStar)':
+      return [
+        { key: 'server_address', label: 'Server Address', type: 'text', placeholder: '192.168.1.100 or biostar.company.com' },
+        { key: 'port', label: 'Port', type: 'text', placeholder: '443' },
+        { key: 'username', label: 'Username', type: 'text', placeholder: 'Enter username' },
+        { key: 'password', label: 'Password', type: 'password', placeholder: 'Enter password' },
+      ];
+    case 'Honeywell': case'Bosch': case'HID Global': case'ZKTeco': case'eSSL': case'Godrej': case'Tyco':
+      return [
+        { key: 'base_url', label: 'Base URL / Server Address', type: 'url', placeholder: 'https://server.company.com' },
+        { key: 'api_key', label: 'API Key or Client ID', type: 'text', placeholder: 'Enter API key or client ID' },
+        { key: 'secret', label: 'Secret / Password', type: 'password', placeholder: 'Enter secret or password' },
+      ];
+    case 'Custom / Other':
+      return [
+        { key: 'base_url', label: 'Base URL', type: 'url', placeholder: 'https://your-ac-server.com' },
+        { key: 'api_key', label: 'API Key / Username', type: 'text', placeholder: 'Enter API key or username' },
+        { key: 'secret', label: 'Secret / Password', type: 'password', placeholder: 'Enter secret or password' },
+        {
+          key: 'protocol',
+          label: 'Protocol',
+          type: 'select',
+          options: ['API', 'OSDP', 'Wiegand'],
+        },
+      ];
+    default:
+      return [];
+  }
+}
 
-  const handleAdd = (device: AccessDevice) => {
-    if (editDevice) {
-      setDevices(prev => prev.map(d => d.id === device.id ? device : d));
-    } else {
-      setDevices(prev => [...prev, device]);
-    }
-    setEditDevice(null);
-  };
+// ─── Access Control Form (shared between Global and Per-Site) ─────────────────
 
-  const handleRemove = (id: string) => {
-    setDevices(prev => prev.filter(d => d.id !== id));
-  };
+interface ACFormProps {
+  prefix: string;
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+  showPass: Record<string, boolean>;
+  onTogglePass: (key: string) => void;
+  showInheritNote?: boolean;
+}
 
-  const handleEdit = (device: AccessDevice) => {
-    setEditDevice(device);
-    setShowModal(true);
-  };
+function ACForm({ prefix, values, onChange, showPass, onTogglePass, showInheritNote }: ACFormProps) {
+  const brand = (values[`${prefix}_brand`] || '') as ACBrand;
+  const fields = getACFields(brand);
 
   return (
-    <>
-      <div className="mt-5 space-y-3">
-        {/* Section Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-[13px] font-bold text-text-primary">Device &amp; Gate Mapping</h3>
-            <p className="text-[11px] text-text-muted mt-0.5">
-              {devices.length} device{devices.length !== 1 ? 's' : ''} mapped for {siteName}
-            </p>
-          </div>
-          <button
-            onClick={() => { setEditDevice(null); setShowModal(true); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white blue-gradient rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-sm"
-          >
-            <Plus size={13} />
-            Add Device
-          </button>
-        </div>
-
-        {/* Info Note */}
-        <div className="flex items-start gap-2.5 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-          <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
-          <p className="text-[12px] text-blue-700 leading-relaxed">
-            Map your physical doors/turnstiles to specific Gates and Access Zones so visitor check-in automatically grants access.
+    <div className="space-y-4">
+      {/* Inherit note */}
+      {showInheritNote && (
+        <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-[12px] text-amber-800 leading-relaxed">
+            <strong>Note:</strong> Leave fields empty to inherit global credentials. Filled fields override global settings for this site only.
           </p>
         </div>
+      )}
 
-        {/* Devices Table */}
-        {devices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl bg-surface/40">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-2.5">
-              <Shield size={18} className="text-text-muted" />
-            </div>
-            <p className="text-[13px] font-semibold text-text-secondary">No devices mapped yet</p>
-            <p className="text-[11px] text-text-muted mt-1">Click &quot;Add Device&quot; to link your first hardware device.</p>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-[12px]">
-                <thead>
-                  <tr className="bg-surface border-b border-border">
-                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Device ID / Name</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Type</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Linked Gate</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Access Zone(s)</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Protocol</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap">Status</th>
-                    <th className="px-3 py-2.5 font-semibold text-text-secondary whitespace-nowrap text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {devices.map((device, idx) => (
-                    <tr
-                      key={device.id}
-                      className={`border-b border-border last:border-0 transition-colors hover:bg-primary-50/20 ${idx % 2 === 1 ? 'bg-surface/30' : 'bg-white'}`}
-                    >
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-md bg-red-50 flex items-center justify-center shrink-0">
-                            <Shield size={11} className="text-red-500" />
-                          </div>
-                          <span className="font-semibold text-text-primary whitespace-nowrap">{device.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-text-secondary text-[11px] font-medium whitespace-nowrap">
-                          {device.deviceType}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-1 text-text-secondary whitespace-nowrap">
-                          <MapPin size={10} className="text-text-muted shrink-0" />
-                          {device.linkedGate}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex flex-wrap gap-1">
-                          {device.linkedZones.length === 0 ? (
-                            <span className="text-text-muted">—</span>
-                          ) : device.linkedZones.map(zone => (
-                            <span key={zone} className="px-1.5 py-0.5 rounded bg-primary-50 text-primary-700 text-[10px] font-medium whitespace-nowrap">
-                              {zone}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[11px] font-medium whitespace-nowrap border border-amber-100">
-                          {device.protocol}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <DeviceStatusPill status={device.status} />
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleEdit(device)}
-                            title="Edit"
-                            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-primary-50 text-text-muted hover:text-primary-700 transition-colors"
-                          >
-                            <Edit2 size={11} />
-                          </button>
-                          <button
-                            title="Test Connection"
-                            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-amber-50 text-text-muted hover:text-amber-600 transition-colors"
-                          >
-                            <FlaskConical size={11} />
-                          </button>
-                          <button
-                            onClick={() => handleRemove(device.id)}
-                            title="Remove"
-                            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 text-text-muted hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+      {/* Brand Dropdown — always first */}
+      <div>
+        <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">
+          Access Control Provider / Brand <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={brand}
+          onChange={e => onChange(`${prefix}_brand`, e.target.value)}
+          className="w-full px-3 py-2 text-[13px] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 bg-white"
+        >
+          <option value="">— Select a brand —</option>
+          {AC_BRANDS.map(b => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
       </div>
 
-      {showModal && (
-        <AddDeviceModal
-          siteId={siteId}
-          onClose={() => { setShowModal(false); setEditDevice(null); }}
-          onAdd={handleAdd}
-          editDevice={editDevice}
-        />
+      {/* Dynamic fields */}
+      {brand && fields.length > 0 && (
+        <div className="space-y-3 pt-1">
+          {fields.map(field => {
+            const fieldKey = `${prefix}_${field.key}`;
+            if (field.type === 'select') {
+              return (
+                <div key={field.key}>
+                  <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">{field.label}</label>
+                  <select
+                    value={values[fieldKey] || ''}
+                    onChange={e => onChange(fieldKey, e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 bg-white"
+                  >
+                    <option value="">— Select —</option>
+                    {field.options?.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+              );
+            }
+            return (
+              <div key={field.key}>
+                <label className="block text-[12px] font-semibold text-text-secondary mb-1.5">{field.label}</label>
+                <div className="relative">
+                  <input
+                    type={field.type === 'password' && !showPass[fieldKey] ? 'password' : 'text'}
+                    placeholder={field.placeholder}
+                    value={values[fieldKey] || ''}
+                    onChange={e => onChange(fieldKey, e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400 bg-white pr-9"
+                  />
+                  {field.type === 'password' && (
+                    <button
+                      type="button"
+                      onClick={() => onTogglePass(fieldKey)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+                    >
+                      {showPass[fieldKey] ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  )}
+                </div>
+                {field.note && (
+                  <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+                    <Lock size={10} />
+                    {field.note}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
-    </>
+
+      {brand === '' && (
+        <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+          <Info size={13} className="text-slate-400 shrink-0" />
+          <p className="text-[12px] text-slate-500">Select a brand above to see the required connection fields.</p>
+        </div>
+      )}
+    </div>
   );
 }
 
-// ─── Configure Drawer ─────────────────────────────────────────────────────────
+// ─── Access Control Drawer ────────────────────────────────────────────────────
+
+interface ACDrawerProps {
+  integration: Integration;
+  onClose: () => void;
+}
+
+function AccessControlDrawer({ integration, onClose }: ACDrawerProps) {
+  const [activeTab, setActiveTab] = useState<'global' | 'per-site'>('global');
+  const [globalValues, setGlobalValues] = useState<Record<string, string>>({});
+  const [showPass, setShowPass] = useState<Record<string, boolean>>({});
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  const [editingSite, setEditingSite] = useState<SiteConfig | null>(null);
+  const [siteValues, setSiteValues] = useState<Record<string, string>>({});
+  const [autoSaved, setAutoSaved] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  const triggerToast = (msg: string, type: 'success' | 'error') => {
+    setToastMsg(msg);
+    setToastType(type);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3500);
+  };
+
+  const handleTest = () => {
+    setTesting(true);
+    setTestResult(null);
+    setTimeout(() => {
+      setTesting(false);
+      const ok = Math.random() > 0.3;
+      setTestResult(ok ? 'success' : 'error');
+      triggerToast(
+        ok ? 'Connection successful! Credentials are valid.' : 'Connection failed. Please check your credentials.',
+        ok ? 'success' : 'error'
+      );
+    }, 1800);
+  };
+
+  const handleGlobalChange = (key: string, value: string) => {
+    setGlobalValues(p => ({ ...p, [key]: value }));
+    setAutoSaved(false);
+    setTimeout(() => setAutoSaved(true), 800);
+  };
+
+  const handleSiteChange = (key: string, value: string) => {
+    setSiteValues(p => ({ ...p, [key]: value }));
+    setAutoSaved(false);
+    setTimeout(() => setAutoSaved(true), 800);
+  };
+
+  const togglePass = (key: string) => {
+    setShowPass(p => ({ ...p, [key]: !p[key] }));
+  };
+
+  const openSiteEdit = (site: SiteConfig) => {
+    setEditingSite(site);
+    setSiteValues(site.fields || {});
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      <div className="flex-1" onClick={onClose} style={{ background: 'rgba(0,0,0,0.35)' }} />
+      <div className="w-full max-w-[540px] bg-white h-full shadow-2xl flex flex-col overflow-hidden">
+
+        {/* Toast */}
+        {showToast && (
+          <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-[12px] font-semibold border transition-all ${
+            toastType === 'success' ?'bg-green-50 text-green-800 border-green-200' :'bg-red-50 text-red-800 border-red-200'
+          }`}>
+            {toastType === 'success'
+              ? <CheckCircle size={14} className="text-green-600" />
+              : <XCircle size={14} className="text-red-600" />}
+            {toastMsg}
+          </div>
+        )}
+
+        {/* Drawer Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white bg-red-500">
+              <Shield size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-[14px] font-bold text-text-primary">Access Control</h2>
+                <div className="relative group">
+                  <button className="w-5 h-5 flex items-center justify-center rounded-full bg-surface border border-border hover:bg-primary-50 transition-colors">
+                    <HelpCircle size={11} className="text-text-muted" />
+                  </button>
+                  <div className="absolute left-6 top-0 z-20 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl leading-relaxed">
+                    Configure your physical access control system. Global credentials apply to all sites; override per-site as needed.
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-text-muted">Physical Security · Global Admin</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {autoSaved && (
+              <span className="text-[11px] text-green-600 font-semibold flex items-center gap-1 bg-green-50 px-2 py-1 rounded-lg border border-green-100">
+                <CheckCircle size={11} /> Saved
+              </span>
+            )}
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface transition-colors">
+              <X size={16} className="text-text-muted" />
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-border shrink-0">
+          <button
+            onClick={() => { setActiveTab('global'); setEditingSite(null); }}
+            className={`flex items-center gap-2 px-5 py-3 text-[13px] font-semibold border-b-2 transition-all ${
+              activeTab === 'global' ? 'border-primary-600 text-primary-700' : 'border-transparent text-text-muted hover:text-text-secondary'
+            }`}
+          >
+            <Globe size={14} />
+            Global Configuration
+          </button>
+          <button
+            onClick={() => { setActiveTab('per-site'); setEditingSite(null); }}
+            className={`flex items-center gap-2 px-5 py-3 text-[13px] font-semibold border-b-2 transition-all ${
+              activeTab === 'per-site' ? 'border-primary-600 text-primary-700' : 'border-transparent text-text-muted hover:text-text-secondary'
+            }`}
+          >
+            <Building2 size={14} />
+            Per-Site Configuration
+          </button>
+        </div>
+
+        {/* Drawer Body */}
+        <div className="flex-1 overflow-y-auto">
+
+          {/* ── Global Configuration Tab ── */}
+          {activeTab === 'global' && (
+            <div className="px-5 py-5 space-y-5">
+              {/* Status row */}
+              <div className="flex items-center justify-between p-3 bg-surface rounded-xl border border-border">
+                <span className="text-[12px] font-semibold text-text-secondary">Current Status</span>
+                <StatusBadge status={integration.status} />
+              </div>
+
+              <p className="text-[13px] text-text-secondary leading-relaxed">
+                {integration.description}
+              </p>
+
+              {/* AC Form */}
+              <ACForm
+                prefix="global"
+                values={globalValues}
+                onChange={handleGlobalChange}
+                showPass={showPass}
+                onTogglePass={togglePass}
+                showInheritNote={false}
+              />
+
+              {/* Test Connection */}
+              <div>
+                <button
+                  onClick={handleTest}
+                  disabled={testing || !globalValues['global_brand']}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-semibold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {testing ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+                  {testing ? 'Testing Connection...' : 'Test Connection'}
+                </button>
+                {testResult === 'success' && (
+                  <div className="mt-2 flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-lg">
+                    <CheckCircle size={14} className="text-green-600 shrink-0" />
+                    <span className="text-[12px] text-green-700 font-medium">Connection successful! Credentials are valid.</span>
+                  </div>
+                )}
+                {testResult === 'error' && (
+                  <div className="mt-2 flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                    <XCircle size={14} className="text-red-600 shrink-0" />
+                    <span className="text-[12px] text-red-700 font-medium">Connection failed. Please check your credentials.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Help note */}
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                <HelpCircle size={14} className="text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-[12px] text-blue-700 leading-relaxed">
+                  Global credentials apply to all sites by default. You can override them per-site in the <strong>Per-Site Configuration</strong> tab.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Per-Site List ── */}
+          {activeTab === 'per-site' && !editingSite && (
+            <div className="px-5 py-5 space-y-4">
+              <p className="text-[13px] text-text-secondary">
+                Configure site-specific credentials. Sites without overrides use the global credentials.
+              </p>
+
+              <div className="rounded-xl border border-border overflow-hidden">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="bg-surface border-b border-border">
+                      <th className="text-left px-4 py-2.5 font-semibold text-text-secondary">Site</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-text-secondary">Status</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-text-secondary">Last Sync</th>
+                      <th className="px-4 py-2.5"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {integration.siteConfigs.map((site, idx) => (
+                      <tr
+                        key={site.siteId}
+                        className={`border-b border-border last:border-0 hover:bg-surface/60 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-surface/30'}`}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-md bg-primary-50 flex items-center justify-center">
+                              <Building2 size={12} className="text-primary-600" />
+                            </div>
+                            <span className="font-medium text-text-primary">{site.siteName}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={site.status} />
+                        </td>
+                        <td className="px-4 py-3 text-text-muted">
+                          {site.lastSync || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => openSiteEdit(site)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-all"
+                          >
+                            <Edit2 size={11} />
+                            Configure
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── Per-Site Edit View ── */}
+          {activeTab === 'per-site' && editingSite && (
+            <div className="px-5 py-5 space-y-5">
+              {/* Back */}
+              <button
+                onClick={() => setEditingSite(null)}
+                className="flex items-center gap-1.5 text-[12px] font-semibold text-primary-700 hover:text-primary-800 transition-colors"
+              >
+                <ChevronLeft size={14} />
+                Back to all sites
+              </button>
+
+              {/* Site Header */}
+              <div className="flex items-center justify-between p-3 bg-surface rounded-xl border border-border">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
+                    <Building2 size={15} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-bold text-text-primary">{editingSite.siteName}</p>
+                    <p className="text-[11px] text-text-muted">Site-specific credentials</p>
+                  </div>
+                </div>
+                <StatusBadge status={editingSite.status} />
+              </div>
+
+              {/* AC Form with inherit note */}
+              <ACForm
+                prefix={`site_${editingSite.siteId}`}
+                values={siteValues}
+                onChange={handleSiteChange}
+                showPass={showPass}
+                onTogglePass={togglePass}
+                showInheritNote={true}
+              />
+
+              {/* Test Connection */}
+              <div>
+                <button
+                  onClick={handleTest}
+                  disabled={testing}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-semibold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {testing ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+                  {testing ? 'Testing Connection...' : 'Test Connection'}
+                </button>
+                {testResult === 'success' && (
+                  <div className="mt-2 flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-lg">
+                    <CheckCircle size={14} className="text-green-600 shrink-0" />
+                    <span className="text-[12px] text-green-700 font-medium">Connection successful!</span>
+                  </div>
+                )}
+                {testResult === 'error' && (
+                  <div className="mt-2 flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                    <XCircle size={14} className="text-red-600 shrink-0" />
+                    <span className="text-[12px] text-red-700 font-medium">Connection failed. Check credentials.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Drawer Footer */}
+        <div className="shrink-0 px-5 py-4 border-t border-border flex items-center gap-2.5 bg-surface">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 text-[13px] font-medium text-text-secondary border border-border rounded-lg hover:bg-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              setAutoSaved(true);
+              onClose();
+            }}
+            className="flex-1 px-4 py-2 text-[13px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-all shadow-sm"
+          >
+            Save &amp; Connect
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Generic Configure Drawer ─────────────────────────────────────────────────
 
 interface ConfigDrawerProps {
   integration: Integration;
@@ -734,10 +1059,8 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
         {/* Drawer Body */}
         <div className="flex-1 overflow-y-auto">
 
-          {/* ── Global Configuration Tab ── */}
           {activeTab === 'global' && (
             <div className="px-5 py-5 space-y-5">
-              {/* Status */}
               <div className="flex items-center justify-between p-3 bg-surface rounded-xl border border-border">
                 <span className="text-[12px] font-semibold text-text-secondary">Current Status</span>
                 <StatusBadge status={integration.status} />
@@ -745,7 +1068,6 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
 
               <p className="text-[13px] text-text-secondary leading-relaxed">{integration.description}</p>
 
-              {/* Credential Fields */}
               <div className="space-y-3">
                 <p className="text-[11px] font-bold text-text-primary uppercase tracking-wider">Company-Wide Credentials</p>
                 {integration.globalFields.map(field => (
@@ -773,7 +1095,6 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
                 ))}
               </div>
 
-              {/* Test Connection */}
               <div>
                 <button
                   onClick={handleTest}
@@ -797,7 +1118,6 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
                 )}
               </div>
 
-              {/* Help tooltip */}
               <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
                 <HelpCircle size={14} className="text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-[12px] text-blue-700 leading-relaxed">
@@ -807,14 +1127,12 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
             </div>
           )}
 
-          {/* ── Per-Site Configuration Tab ── */}
           {activeTab === 'per-site' && !editingSite && (
             <div className="px-5 py-5 space-y-4">
               <p className="text-[13px] text-text-secondary">
                 Configure site-specific overrides. Sites without overrides use the global credentials.
               </p>
 
-              {/* Sites Table */}
               <div className="rounded-xl border border-border overflow-hidden">
                 <table className="w-full text-[12px]">
                   <thead>
@@ -862,10 +1180,8 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
             </div>
           )}
 
-          {/* ── Per-Site Edit View ── */}
           {activeTab === 'per-site' && editingSite && (
             <div className="px-5 py-5 space-y-5">
-              {/* Back */}
               <button
                 onClick={() => setEditingSite(null)}
                 className="flex items-center gap-1.5 text-[12px] font-semibold text-primary-700 hover:text-primary-800 transition-colors"
@@ -874,7 +1190,6 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
                 Back to all sites
               </button>
 
-              {/* Site Header */}
               <div className="flex items-center justify-between p-3 bg-surface rounded-xl border border-border">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
@@ -888,7 +1203,6 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
                 <StatusBadge status={editingSite.status} />
               </div>
 
-              {/* Site-Specific Fields */}
               <div className="space-y-3">
                 <p className="text-[11px] font-bold text-text-primary uppercase tracking-wider">Site Credentials / Overrides</p>
                 {integration.siteFields.map(field => (
@@ -926,7 +1240,6 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
           )}
         </div>
 
-        {/* Drawer Footer */}
         <div className="shrink-0 px-5 py-4 border-t border-border flex items-center gap-2.5 bg-surface">
           <button onClick={onClose} className="flex-1 px-4 py-2 text-[13px] font-medium text-text-secondary border border-border rounded-lg hover:bg-white transition-colors">
             Cancel
@@ -998,6 +1311,10 @@ export default function IntegrationsPage() {
         i.siteConfigs.some(sc => sc.siteId === activeSite && sc.status !== 'Disconnected')
       );
 
+  const handleConfigure = (integration: Integration) => {
+    setActiveDrawer(integration);
+  };
+
   return (
     <AppLayout>
       <div className="px-6 py-5 max-w-screen-2xl mx-auto space-y-5">
@@ -1011,7 +1328,7 @@ export default function IntegrationsPage() {
                 <button className="w-5 h-5 flex items-center justify-center rounded-full bg-surface border border-border hover:bg-primary-50 transition-colors">
                   <HelpCircle size={12} className="text-text-muted" />
                 </button>
-                <div className="absolute left-6 top-0 z-20 hidden group-hover:block w-60 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl">
+                <div className="absolute left-6 top-0 z-20 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl leading-relaxed">
                   Connect VMSPro with your existing tools and services. Global credentials apply to all sites; override per-site as needed.
                 </div>
               </div>
@@ -1062,7 +1379,7 @@ export default function IntegrationsPage() {
             <IntegrationCard
               key={integration.id}
               integration={integration}
-              onConfigure={setActiveDrawer}
+              onConfigure={handleConfigure}
             />
           ))}
           {filteredIntegrations.length === 0 && (
@@ -1078,7 +1395,14 @@ export default function IntegrationsPage() {
 
       </div>
 
-      {activeDrawer && (
+      {/* Drawers */}
+      {activeDrawer && activeDrawer.id === 'access-control' && (
+        <AccessControlDrawer
+          integration={activeDrawer}
+          onClose={() => setActiveDrawer(null)}
+        />
+      )}
+      {activeDrawer && activeDrawer.id !== 'access-control' && (
         <ConfigDrawer
           integration={activeDrawer}
           onClose={() => setActiveDrawer(null)}
