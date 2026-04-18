@@ -25,7 +25,6 @@ interface MappedDevice {
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const SITES = [
-  { id: 'all', name: 'All Sites' },
   { id: 'site-a', name: 'Site A – HQ' },
   { id: 'site-b', name: 'Site B – Warehouse' },
   { id: 'site-c', name: 'Site C – Branch' },
@@ -495,58 +494,10 @@ function SiteTabContent({ siteId, siteName }: SiteTabContentProps) {
   );
 }
 
-// ─── All Sites Overview ───────────────────────────────────────────────────────
-
-function AllSitesOverview() {
-  const sitesWithDevices = SITES.filter(s => s.id !== 'all');
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {sitesWithDevices.map(site => {
-          const devices = INITIAL_DEVICES_BY_SITE[site.id] || [];
-          const connected = devices.filter(d => d.status === 'Connected').length;
-          const errors = devices.filter(d => d.status === 'Error').length;
-          const offline = devices.filter(d => d.status === 'Offline').length;
-          return (
-            <div key={site.id} className="bg-white rounded-xl border border-border p-4 hover:shadow-md transition-shadow">
-              <p className="text-[13px] font-bold text-text-primary mb-3">{site.name}</p>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[12px]">
-                  <span className="text-text-muted">Total Devices</span>
-                  <span className="font-semibold text-text-primary">{devices.length}</span>
-                </div>
-                <div className="flex items-center justify-between text-[12px]">
-                  <span className="text-green-600 flex items-center gap-1"><CheckCircle size={11} /> Connected</span>
-                  <span className="font-semibold text-green-700">{connected}</span>
-                </div>
-                {errors > 0 && (
-                  <div className="flex items-center justify-between text-[12px]">
-                    <span className="text-red-600 flex items-center gap-1"><AlertCircle size={11} /> Error</span>
-                    <span className="font-semibold text-red-700">{errors}</span>
-                  </div>
-                )}
-                {offline > 0 && (
-                  <div className="flex items-center justify-between text-[12px]">
-                    <span className="text-slate-500 flex items-center gap-1"><WifiOff size={11} /> Offline</span>
-                    <span className="font-semibold text-slate-600">{offline}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-[13px] text-indigo-700">
-        Select a specific site tab above to manage device mappings for that site.
-      </div>
-    </div>
-  );
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DeviceGateMappingPage() {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('site-a');
 
   const activeSite = SITES.find(s => s.id === activeTab) || SITES[0];
 
@@ -594,11 +545,7 @@ export default function DeviceGateMappingPage() {
 
         {/* Tab Content */}
         <div>
-          {activeTab === 'all' ? (
-            <AllSitesOverview />
-          ) : (
-            <SiteTabContent siteId={activeSite.id} siteName={activeSite.name} />
-          )}
+          <SiteTabContent siteId={activeSite.id} siteName={activeSite.name} />
         </div>
 
       </div>
