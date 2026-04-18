@@ -754,7 +754,6 @@ function PermissionCell({
 }) {
   const [hovered, setHovered] = useState(false);
   const isSuperAdmin = role === 'Super Admin';
-  const cfg = ROLE_MATRIX_CONFIG[role];
 
   return (
     <td
@@ -765,29 +764,28 @@ function PermissionCell({
       {isSuperAdmin ? (
         <div className="flex items-center justify-center">
           <div className="relative group">
-            <div className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center shadow-sm">
-              <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-inner" />
+            <div
+              className="w-5 h-5 rounded-[4px] flex items-center justify-center opacity-60 cursor-not-allowed"
+              style={{ background: '#4F46E5', border: '1px solid #4338CA', minWidth: '20px', minHeight: '20px' }}
+            >
+              <Check size={12} strokeWidth={3} className="text-white" />
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-100 border border-amber-300 rounded-full flex items-center justify-center">
-              <Lock size={8} className="text-amber-600" />
+            <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-amber-100 border border-amber-300 rounded-full flex items-center justify-center">
+              <Lock size={7} className="text-amber-600" />
             </div>
           </div>
         </div>
       ) : (
         <button
           onClick={onToggle}
-          className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mx-auto transition-all duration-200 hover:scale-110 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+          className={`w-5 h-5 rounded-[4px] flex items-center justify-center mx-auto transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-300 ${
             isChecked
-              ? 'bg-emerald-500 border-emerald-400 shadow-sm focus:ring-emerald-300'
-              : 'bg-white border-slate-200 hover:border-slate-300 focus:ring-slate-200'
+              ? 'hover:opacity-80' :'bg-white border border-slate-300 hover:border-indigo-400'
           }`}
+          style={isChecked ? { background: '#4F46E5', border: '1px solid #4338CA', minWidth: '20px', minHeight: '20px' } : { minWidth: '20px', minHeight: '20px' }}
           title={`${isChecked ? 'Remove' : 'Grant'} ${role} access to ${feature}`}
         >
-          {isChecked ? (
-            <div className="w-3.5 h-3.5 rounded-full bg-white/90 shadow-inner" />
-          ) : (
-            <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-200" />
-          )}
+          {isChecked && <Check size={12} strokeWidth={3} className="text-white" />}
         </button>
       )}
       {/* Tooltip */}
@@ -795,7 +793,7 @@ function PermissionCell({
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 bg-slate-800 text-white text-[10px] rounded-xl px-3 py-2 shadow-2xl whitespace-normal pointer-events-none leading-relaxed">
           <span className="font-semibold">{role}</span>
           {isChecked || isSuperAdmin ? (
-            <span className="text-emerald-300"> can access </span>
+            <span className="text-indigo-300"> can access </span>
           ) : (
             <span className="text-slate-400"> cannot access </span>
           )}
@@ -873,11 +871,13 @@ function PermissionMatrixSection() {
             <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Legend</span>
             <div className="w-px h-3.5 bg-slate-200" />
             <span className="flex items-center gap-1.5 text-slate-600 font-medium">
-              <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block shadow-sm" />
+              <span className="w-5 h-5 rounded-[4px] flex items-center justify-center inline-flex" style={{ background: '#4F46E5', border: '1px solid #4338CA' }}>
+                <Check size={11} strokeWidth={3} className="text-white" />
+              </span>
               Full Access
             </span>
             <span className="flex items-center gap-1.5 text-slate-400 font-medium">
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 inline-block" />
+              <span className="w-5 h-5 rounded-[4px] bg-white border border-slate-300 inline-block" />
               No Access
             </span>
           </div>
