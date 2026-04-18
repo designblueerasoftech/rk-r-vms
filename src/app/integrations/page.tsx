@@ -681,8 +681,6 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
     setSiteValues(site.fields || {});
   };
 
-  const isAccessControl = integration.id === 'access-control';
-
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1" onClick={onClose} style={{ background: 'rgba(0,0,0,0.35)' }} />
@@ -924,13 +922,6 @@ function ConfigDrawer({ integration, onClose }: ConfigDrawerProps) {
                   Leave fields empty to inherit global credentials. Filled fields override the global settings for this site only.
                 </p>
               </div>
-
-              {/* Device & Gate Mapping — only for Access Control */}
-              {isAccessControl && (
-                <div className="border-t border-border pt-5">
-                  <DeviceGateMapping siteId={editingSite.siteId} siteName={editingSite.siteName} />
-                </div>
-              )}
             </div>
           )}
         </div>

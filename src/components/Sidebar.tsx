@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { useRole } from '@/context/RoleContext';
-import { LayoutDashboard, Users, GitBranch, Paintbrush, ShieldAlert, MonitorSmartphone, UserCog, ChevronLeft, ChevronRight, LogOut, ChevronDown, ChevronUp, ClipboardList, Shield, Lock, DoorOpen, Plug, Bell, BarChart2, BookOpen, Settings, Building2,  } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, Paintbrush, ShieldAlert, MonitorSmartphone, UserCog, ChevronLeft, ChevronRight, LogOut, ChevronDown, ChevronUp, ClipboardList, Shield, Lock, DoorOpen, Plug, Bell, BarChart2, BookOpen, Settings, Building2, Link2  } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -57,6 +57,7 @@ const navGroups: NavGroup[] = [
     items: [
       { id: 'nav-users', label: 'Users & Permissions', icon: <UserCog size={18} />, href: '/users-permissions' },
       { id: 'nav-integrations', label: 'Integrations', icon: <Plug size={18} />, href: '/integrations' },
+      { id: 'nav-device-gate', label: 'Device & Gate Mapping', icon: <Link2 size={18} />, href: '/device-gate-mapping' },
       { id: 'nav-notifications', label: 'Notifications', icon: <Bell size={18} />, href: '/notifications' },
     ],
   },
