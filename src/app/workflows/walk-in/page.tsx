@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   GitBranch, Plus, Clock, CheckCircle, X, Briefcase, HardHat, UserCheck,
   Star, Truck, Shield, Users, Pencil, Eye, MoreVertical, Zap, FileText, ArrowRight,
+  UsersRound,
 } from 'lucide-react';
 
 interface WalkInWorkflow {
@@ -27,6 +28,7 @@ const visitorTypeIcons: Record<string, React.ReactNode> = {
   'Interviewee': <UserCheck size={18} />,
   'VIP / Executive': <Star size={18} />,
   'Govt Official': <Shield size={18} />,
+  'Group Visit': <UsersRound size={18} />,
 };
 
 const visitorTypeColors: Record<string, string> = {
@@ -37,6 +39,7 @@ const visitorTypeColors: Record<string, string> = {
   'Interviewee': 'bg-green-100 text-green-600',
   'VIP / Executive': 'bg-purple-100 text-purple-600',
   'Govt Official': 'bg-red-100 text-red-600',
+  'Group Visit': 'bg-teal-100 text-teal-700',
 };
 
 const allVisitorTypes = [
@@ -47,6 +50,7 @@ const allVisitorTypes = [
   { name: 'Interviewee', description: 'Job candidates and interview attendees' },
   { name: 'VIP / Executive', description: 'VIP guests, executives and high-priority visitors' },
   { name: 'Govt Official', description: 'Government officials and regulatory inspectors' },
+  { name: 'Group Visit', description: 'Multiple visitors arriving together under one host – tours, training batches, vendor teams, etc.' },
 ];
 
 const initialWorkflows: WalkInWorkflow[] = [
