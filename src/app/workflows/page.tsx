@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GitBranch, Plus, Clock, CheckCircle, X, Briefcase, HardHat, UserCheck, Star, Truck, Shield, Users, Pencil, Eye, MoreVertical, Zap, FileText, ArrowRight,  } from 'lucide-react';
+import { GitBranch, Plus, Clock, CheckCircle, X, Briefcase, HardHat, UserCheck, Star, Truck, Shield, Users, Pencil, Eye, MoreVertical, Zap, FileText, ArrowRight, UsersRound } from 'lucide-react';
 
 interface Workflow {
   id: number;
@@ -25,6 +25,7 @@ const visitorTypeIcons: Record<string, React.ReactNode> = {
   'Delivery / Courier': <Truck size={18} />,
   'Govt Official': <Shield size={18} />,
   'General Visitor': <Users size={18} />,
+  'Group Visit': <UsersRound size={18} />,
 };
 
 const visitorTypeColors: Record<string, string> = {
@@ -35,6 +36,7 @@ const visitorTypeColors: Record<string, string> = {
   'Delivery / Courier': 'bg-orange-100 text-orange-600',
   'Govt Official': 'bg-red-100 text-red-600',
   'General Visitor': 'bg-slate-100 text-slate-600',
+  'Group Visit': 'bg-teal-100 text-teal-600',
 };
 
 const allVisitorTypes = [
@@ -45,6 +47,7 @@ const allVisitorTypes = [
   { name: 'Delivery / Courier', description: 'Delivery personnel and courier services' },
   { name: 'Govt Official', description: 'Government officials and regulatory inspectors' },
   { name: 'General Visitor', description: 'General public and walk-in visitors' },
+  { name: 'Group Visit', description: 'Multiple visitors arriving together under one host – tours, training batches, vendor teams, etc.' },
 ];
 
 const initialWorkflows: Workflow[] = [
