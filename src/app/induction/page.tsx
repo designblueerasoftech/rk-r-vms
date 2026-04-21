@@ -652,7 +652,7 @@ function QuizModal({ item, onSave, onClose }: { item: QuizItem | null; onSave: (
                         <input value={opt} onChange={e => {
                           const newOpts = [...q.options]; newOpts[oi] = e.target.value;
                           updateQuestion(qi, 'options', newOpts);
-                        }} placeholder={`Option ${oi + 1}${q.correctIndex === oi ? ' (correct)' : ''}`}
+                        }} placeholder={`Option ${oi + 1}`}
                           className="flex-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-primary-400 transition-colors" />
                       </div>
                     ))}
@@ -1099,7 +1099,7 @@ function HealthScreeningModal({ item, onSave, onClose }: { item: HealthScreening
                         <input key={oi} value={opt} onChange={e => {
                           const newOpts = [...(q.options.length ? q.options : ['', '', '', ''])]; newOpts[oi] = e.target.value;
                           updateQuestion(qi, 'options', newOpts);
-                        }} placeholder={`Option ${oi + 1}${q.correctIndex === oi ? ' (correct)' : ''}`}
+                        }} placeholder={`Option ${oi + 1}`}
                           className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-primary-400 transition-colors" />
                       ))}
                     </div>

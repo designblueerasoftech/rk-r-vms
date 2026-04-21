@@ -2,7 +2,14 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, Plus, ChevronDown, ChevronUp, GripVertical, Lock, Eye, EyeOff, CheckCircle, AlertTriangle, X, Save, Upload, ArrowLeft, Zap, Settings, User, Phone, Mail, CreditCard, Camera, FileText, Users, Shield, Hash, Calendar, ToggleLeft, List, Type, Star, Clipboard, Video, HelpCircle, BookOpen, Heart, Play, CheckSquare,  } from 'lucide-react';
+import {
+  Search, Plus, ChevronDown, ChevronUp, GripVertical, Lock, Eye, EyeOff,
+  CheckCircle, AlertTriangle, X, Save, Upload, ArrowLeft, Zap, Settings,
+  User, Phone, Mail, CreditCard, Camera, FileText, Users, Shield, Hash,
+  Calendar, ToggleLeft, List, Type, Star, Clipboard, Video, HelpCircle,
+  BookOpen, Heart, Play, CheckSquare, UsersRound, UserCog, QrCode, Printer,
+  Download, Table2, UserPlus, LayoutList, BadgeCheck,
+} from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +20,7 @@ interface PaletteField {
   icon: React.ReactNode;
   badge?: string;
   category: string;
+  isGroupField?: boolean;
 }
 
 interface CanvasField {
@@ -25,6 +33,9 @@ interface CanvasField {
   visibleToVisitor: boolean;
   locked?: boolean;
   verified?: boolean;
+  // Group-specific
+  groupScope?: 'leader' | 'all_members' | 'group_level';
+  isGroupField?: boolean;
 }
 
 interface ConditionRule {
@@ -42,6 +53,8 @@ interface WorkflowStep {
   fields: CanvasField[];
   conditionRules: ConditionRule[];
   collapsed: boolean;
+  // Group-specific
+  groupApplyTo?: 'leader' | 'all_members';
 }
 
 interface FieldProperties {
@@ -53,6 +66,8 @@ interface FieldProperties {
   mandatory: boolean;
   visibleToHost: boolean;
   visibleToVisitor: boolean;
+  // Group-specific
+  groupScope?: 'leader' | 'all_members' | 'group_level';
 }
 
 // ─── Palette Data ─────────────────────────────────────────────────────────────
@@ -93,6 +108,27 @@ const paletteCategories: { id: string; label: string; fields: PaletteField[] }[]
     ],
   },
 ];
+
+// ─── Group-Specific Palette Fields ────────────────────────────────────────────
+
+const groupDetailFields: PaletteField[] = [
+  { id: 'group-name', label: 'Group Name', description: 'Name of the visiting group — mandatory', icon: <UsersRound size={15} />, category: 'group', isGroupField: true },
+  { id: 'group-size', label: 'Group Size', description: 'Total number of visitors in the group — mandatory', icon: <Hash size={15} />, badge: 'Num', category: 'group', isGroupField: true },
+  { id: 'group-leader-name', label: 'Group Leader Name', description: 'Name of the group representative', icon: <UserCog size={15} />, category: 'group', isGroupField: true },
+  { id: 'group-leader-mobile', label: 'Group Leader Mobile', description: 'Mobile number of the group leader', icon: <Phone size={15} />, category: 'group', isGroupField: true },
+  { id: 'group-leader-email', label: 'Group Leader Email', description: 'Email address of the group leader', icon: <Mail size={15} />, category: 'group', isGroupField: true },
+  { id: 'group-purpose', label: 'Purpose of Group Visit', description: 'Dropdown or free text — reason for group visit', icon: <FileText size={15} />, category: 'group', isGroupField: true },
+];
+
+const groupMembersField: PaletteField = {
+  id: 'group-members',
+  label: 'Group Members',
+  description: 'Repeatable member table — Name, Mobile, Email, ID, Photo. Supports CSV bulk upload.',
+  icon: <Table2 size={15} />,
+  badge: 'Repeatable',
+  category: 'group',
+  isGroupField: true,
+};
 
 // ─── Per-Visitor-Type Workflow Steps ──────────────────────────────────────────
 
@@ -293,6 +329,45 @@ const visitorTypeSteps: Record<string, WorkflowStep[]> = {
       ],
     },
   ],
+  'Group Visit': [
+    {
+      id: 'step-1', number: 1, title: 'Group Registration', color: '#0d9488', collapsed: false, conditionRules: [],
+      groupApplyTo: 'leader',
+      fields: [
+        { id: 'cf-1', paletteId: 'group-name', label: 'Group Name', icon: <UsersRound size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, locked: true, isGroupField: true, groupScope: 'group_level' },
+        { id: 'cf-2', paletteId: 'group-size', label: 'Group Size', icon: <Hash size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, locked: true, isGroupField: true, groupScope: 'group_level' },
+        { id: 'cf-3', paletteId: 'group-leader-name', label: 'Group Leader Name', icon: <UserCog size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, isGroupField: true, groupScope: 'leader' },
+        { id: 'cf-4', paletteId: 'group-leader-mobile', label: 'Group Leader Mobile', icon: <Phone size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, isGroupField: true, groupScope: 'leader' },
+        { id: 'cf-5', paletteId: 'group-leader-email', label: 'Group Leader Email', icon: <Mail size={14} />, mandatory: false, visibleToHost: true, visibleToVisitor: true, isGroupField: true, groupScope: 'leader' },
+        { id: 'cf-6', paletteId: 'group-purpose', label: 'Purpose of Group Visit', icon: <FileText size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, isGroupField: true, groupScope: 'group_level' },
+      ],
+    },
+    {
+      id: 'step-2', number: 2, title: 'Member Details', color: '#7c3aed', collapsed: false, conditionRules: [],
+      groupApplyTo: 'all_members',
+      fields: [
+        { id: 'cf-7', paletteId: 'group-members', label: 'Group Members', icon: <Table2 size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, locked: true, isGroupField: true, groupScope: 'all_members' },
+        { id: 'cf-8', paletteId: 'id-type-number', label: 'ID Type & Number', icon: <CreditCard size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, groupScope: 'all_members' },
+      ],
+    },
+    {
+      id: 'step-3', number: 3, title: 'Compliance & NDA', color: '#405189', collapsed: false,
+      conditionRules: [{ id: 'cr-1', condition: 'IF Group Size > 20', action: '→ Require advance approval', type: 'warning' }],
+      groupApplyTo: 'leader',
+      fields: [
+        { id: 'cf-9', paletteId: 'health-declaration', label: 'Health Declaration', icon: <Shield size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, locked: true, groupScope: 'leader' },
+        { id: 'cf-10', paletteId: 'nda-terms', label: 'NDA / Terms & Conditions', icon: <Clipboard size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, locked: true, groupScope: 'leader' },
+      ],
+    },
+    {
+      id: 'step-4', number: 4, title: 'Arrival & Check-in', color: '#d97706', collapsed: false, conditionRules: [],
+      groupApplyTo: 'all_members',
+      fields: [
+        { id: 'cf-11', paletteId: 'live-photo', label: 'Live Photo + Liveness Check', icon: <Camera size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, locked: true, verified: true, groupScope: 'all_members' },
+        { id: 'cf-12', paletteId: 'host-name', label: 'Host Name', icon: <User size={14} />, mandatory: true, visibleToHost: true, visibleToVisitor: true, locked: true, groupScope: 'leader' },
+      ],
+    },
+  ],
 };
 
 const visitorTypeWorkflowTitle: Record<string, string> = {
@@ -303,6 +378,7 @@ const visitorTypeWorkflowTitle: Record<string, string> = {
   'Delivery / Courier': 'Delivery & Courier Flow',
   'Govt Official': 'Govt Official Access Flow',
   'General Visitor': 'General Visitor Check-in Flow',
+  'Group Visit': 'Group Visit Workflow',
 };
 
 // ─── Toggle Switch ─────────────────────────────────────────────────────────────
@@ -444,11 +520,106 @@ function InductionHubPalette({ onDragStart, onDragEnd }: { onDragStart: (e: Reac
   );
 }
 
+// ─── Group Details Palette Section ────────────────────────────────────────────
+
+function GroupDetailsPalette({ onDragStart, onDragEnd }: { onDragStart: (e: React.DragEvent, field: PaletteField) => void; onDragEnd: () => void }) {
+  const [expanded, setExpanded] = useState(true);
+
+  return (
+    <div className="mb-1">
+      {/* Section Header */}
+      <button
+        onClick={() => setExpanded(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-2 hover:bg-teal-50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-teal-100 flex items-center justify-center">
+            <UsersRound size={10} className="text-teal-600" />
+          </div>
+          <span className="text-[10px] font-bold tracking-widest text-teal-700 uppercase">Group Details</span>
+          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-100 text-teal-700">Group Only</span>
+        </div>
+        {expanded ? <ChevronUp size={12} className="text-teal-500" /> : <ChevronDown size={12} className="text-teal-500" />}
+      </button>
+
+      {expanded && (
+        <div className="px-2 pb-2 space-y-0.5">
+          {/* Group Detail Fields */}
+          {groupDetailFields.map(field => (
+            <div
+              key={field.id}
+              draggable
+              onDragStart={e => onDragStart(e, field)}
+              onDragEnd={onDragEnd}
+              className="flex items-start gap-2.5 px-2.5 py-2 rounded-lg cursor-grab active:cursor-grabbing hover:bg-teal-50 border border-transparent hover:border-teal-100 transition-all duration-150 group"
+            >
+              <div className="w-7 h-7 rounded-md bg-teal-50 flex items-center justify-center text-teal-600 shrink-0 mt-0.5 group-hover:bg-teal-100">
+                {field.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[12px] font-medium text-text-primary truncate">{field.label}</span>
+                  {field.badge && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 shrink-0">{field.badge}</span>}
+                </div>
+                <p className="text-[10px] text-text-muted truncate mt-0.5">{field.description}</p>
+              </div>
+              <GripVertical size={12} className="text-text-muted shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          ))}
+
+          {/* Group Members special field */}
+          <div
+            draggable
+            onDragStart={e => onDragStart(e, groupMembersField)}
+            onDragEnd={onDragEnd}
+            className="flex items-start gap-2.5 px-2.5 py-2.5 rounded-lg cursor-grab active:cursor-grabbing border border-teal-200 bg-teal-50/60 hover:bg-teal-50 hover:border-teal-300 transition-all duration-150 group mt-1"
+          >
+            <div className="w-7 h-7 rounded-md bg-teal-100 flex items-center justify-center text-teal-700 shrink-0 mt-0.5">
+              <Table2 size={15} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[12px] font-semibold text-teal-800">Group Members</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-200 text-teal-800">Repeatable</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">CSV Upload</span>
+              </div>
+              <p className="text-[10px] text-teal-700 mt-0.5 leading-relaxed">Repeatable member table — Name, Mobile, Email, ID, Photo. Supports CSV bulk upload.</p>
+            </div>
+            <GripVertical size={12} className="text-text-muted shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Group Scope Badge ────────────────────────────────────────────────────────
+
+function GroupScopeBadge({ scope }: { scope?: 'leader' | 'all_members' | 'group_level' }) {
+  if (!scope) return null;
+  if (scope === 'leader') return (
+    <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 shrink-0">
+      <UserCog size={8} /> Leader
+    </span>
+  );
+  if (scope === 'all_members') return (
+    <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-100 text-teal-700 shrink-0">
+      <Users size={8} /> All Members
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 shrink-0">
+      <UsersRound size={8} /> Group
+    </span>
+  );
+}
+
 // ─── Step Card ────────────────────────────────────────────────────────────────
 
 interface StepCardProps {
   step: WorkflowStep;
   isActive: boolean;
+  isGroupVisit: boolean;
   dragOverStep: string | null;
   dragOverIndex: number | null;
   draggingCanvasField: { stepId: string; fieldId: string; index: number } | null;
@@ -461,14 +632,20 @@ interface StepCardProps {
   onDragLeave: () => void;
   onCanvasDragStart: (e: React.DragEvent, fieldId: string, idx: number) => void;
   onCanvasDragEnd: () => void;
+  onToggleGroupApplyTo: () => void;
 }
 
-function StepCard({ step, isActive, dragOverStep, dragOverIndex, draggingCanvasField, selectedField, onToggleCollapse, onSelectField, onRemoveField, onDragOver, onDrop, onDragLeave, onCanvasDragStart, onCanvasDragEnd }: StepCardProps) {
+function StepCard({
+  step, isActive, isGroupVisit, dragOverStep, dragOverIndex, draggingCanvasField,
+  selectedField, onToggleCollapse, onSelectField, onRemoveField, onDragOver, onDrop,
+  onDragLeave, onCanvasDragStart, onCanvasDragEnd, onToggleGroupApplyTo,
+}: StepCardProps) {
   const isDragTarget = dragOverStep === step.id;
   const stepColors: Record<number, { bg: string; text: string; border: string; badge: string }> = {
     1: { bg: 'bg-primary-50', text: 'text-primary-700', border: 'border-primary-200', badge: 'bg-primary-600' },
     2: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', badge: 'bg-purple-600' },
     3: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', badge: 'bg-amber-500' },
+    4: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', badge: 'bg-teal-600' },
   };
   const colors = stepColors[step.number] ?? stepColors[1];
 
@@ -488,6 +665,21 @@ function StepCard({ step, isActive, dragOverStep, dragOverIndex, draggingCanvasF
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Group Apply-To Toggle */}
+          {isGroupVisit && (
+            <button
+              onClick={onToggleGroupApplyTo}
+              title="Toggle: Group Leader only / All Members"
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors ${
+                step.groupApplyTo === 'all_members' ?'bg-teal-100 text-teal-700 border-teal-200 hover:bg-teal-200' :'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200'
+              }`}
+            >
+              {step.groupApplyTo === 'all_members'
+                ? <><Users size={10} /> All Members</>
+                : <><UserCog size={10} /> Leader Only</>
+              }
+            </button>
+          )}
           <button className={`p-1 rounded hover:bg-white/60 transition-colors ${colors.text}`}><Zap size={13} /></button>
           <button onClick={onToggleCollapse} className={`p-1 rounded hover:bg-white/60 transition-colors ${colors.text}`}>
             {step.collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
@@ -515,12 +707,13 @@ function StepCard({ step, isActive, dragOverStep, dragOverIndex, draggingCanvasF
                   onDragEnd={onCanvasDragEnd}
                   onDragOver={e => { e.preventDefault(); e.stopPropagation(); onDragOver(e, idx); }}
                   onClick={() => onSelectField(field.id)}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-all duration-150 group ${isDraggingThis ? 'opacity-40' : ''} ${isSelected ? 'border-emerald-300 bg-emerald-50 shadow-sm' : 'border-border bg-white hover:border-emerald-200 hover:bg-emerald-50/40'}`}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-all duration-150 group ${isDraggingThis ? 'opacity-40' : ''} ${isSelected ? 'border-emerald-300 bg-emerald-50 shadow-sm' : field.isGroupField ? 'border-teal-100 bg-teal-50/30 hover:border-teal-200 hover:bg-teal-50/60' : 'border-border bg-white hover:border-emerald-200 hover:bg-emerald-50/40'}`}
                 >
                   <GripVertical size={13} className="text-text-muted cursor-grab shrink-0 opacity-40 group-hover:opacity-100" />
-                  <div className="w-6 h-6 rounded-md bg-surface flex items-center justify-center text-text-secondary shrink-0">{field.icon}</div>
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${field.isGroupField ? 'bg-teal-100 text-teal-700' : 'bg-surface text-text-secondary'}`}>{field.icon}</div>
                   <span className="flex-1 text-[13px] font-medium text-text-primary truncate">{field.label}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {isGroupVisit && field.groupScope && <GroupScopeBadge scope={field.groupScope} />}
                     {field.locked && <Lock size={11} className="text-text-muted" />}
                     {field.verified && <CheckCircle size={11} className="text-green-500" />}
                     {field.mandatory ? <Eye size={11} className="text-primary-400" /> : <EyeOff size={11} className="text-text-muted" />}
@@ -561,12 +754,239 @@ function StepCard({ step, isActive, dragOverStep, dragOverIndex, draggingCanvasF
   );
 }
 
+// ─── Group Preview Modal ───────────────────────────────────────────────────────
+
+function GroupPreviewModal({ onClose }: { onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<'leader' | 'members'>('leader');
+  const [memberCount, setMemberCount] = useState(3);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-teal-50">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center">
+              <UsersRound size={16} className="text-teal-700" />
+            </div>
+            <div>
+              <h2 className="text-[14px] font-bold text-text-primary">Preview as Visitor — Group Flow</h2>
+              <p className="text-[11px] text-text-muted">Simulating group check-in experience</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-teal-100 transition-colors text-text-muted">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-border px-6">
+          <button
+            onClick={() => setActiveTab('leader')}
+            className={`flex items-center gap-1.5 px-4 py-3 text-[12px] font-semibold border-b-2 transition-colors ${activeTab === 'leader' ? 'border-teal-600 text-teal-700' : 'border-transparent text-text-muted hover:text-text-secondary'}`}
+          >
+            <UserCog size={13} /> Group Leader Screen
+          </button>
+          <button
+            onClick={() => setActiveTab('members')}
+            className={`flex items-center gap-1.5 px-4 py-3 text-[12px] font-semibold border-b-2 transition-colors ${activeTab === 'members' ? 'border-teal-600 text-teal-700' : 'border-transparent text-text-muted hover:text-text-secondary'}`}
+          >
+            <Users size={13} /> Member Check-in ({memberCount})
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === 'leader' ? (
+            <div className="space-y-4">
+              <div className="bg-teal-50 border border-teal-100 rounded-xl p-4">
+                <p className="text-[12px] font-semibold text-teal-800 mb-3 flex items-center gap-2">
+                  <UserCog size={14} /> Step 1 — Group Registration (Leader fills)
+                </p>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Group Name', placeholder: 'e.g. TechCorp Training Batch 2024', mandatory: true },
+                    { label: 'Group Size', placeholder: 'e.g. 15', mandatory: true },
+                    { label: 'Group Leader Name', placeholder: 'Your full name', mandatory: true },
+                    { label: 'Group Leader Mobile', placeholder: '+91 98765 43210', mandatory: true },
+                    { label: 'Group Leader Email', placeholder: 'leader@company.com', mandatory: false },
+                    { label: 'Purpose of Group Visit', placeholder: 'Select purpose...', mandatory: true },
+                  ].map(f => (
+                    <div key={f.label}>
+                      <label className="block text-[11px] font-semibold text-text-secondary mb-1">
+                        {f.label} {f.mandatory && <span className="text-red-500">*</span>}
+                      </label>
+                      <div className="w-full px-3 py-2 text-[12px] border border-border rounded-lg bg-white text-text-muted">
+                        {f.placeholder}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                <p className="text-[12px] font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                  <Clipboard size={14} /> Step 3 — NDA & Health Declaration (Leader signs)
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-amber-100">
+                    <CheckSquare size={14} className="text-amber-600" />
+                    <span className="text-[12px] text-text-secondary">I agree to the NDA and Terms & Conditions on behalf of the group</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-amber-100">
+                    <Shield size={14} className="text-amber-600" />
+                    <span className="text-[12px] text-text-secondary">Health Declaration — All group members are symptom-free</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[12px] font-semibold text-text-primary">Group Members Check-in</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setMemberCount(c => Math.max(1, c - 1))}
+                    className="w-6 h-6 rounded-full border border-border flex items-center justify-center text-text-muted hover:bg-surface text-[14px] font-bold"
+                  >−</button>
+                  <span className="text-[12px] font-semibold text-text-primary w-6 text-center">{memberCount}</span>
+                  <button
+                    onClick={() => setMemberCount(c => Math.min(10, c + 1))}
+                    className="w-6 h-6 rounded-full border border-border flex items-center justify-center text-text-muted hover:bg-surface text-[14px] font-bold"
+                  >+</button>
+                </div>
+              </div>
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center gap-2">
+                <Download size={13} className="text-blue-600 shrink-0" />
+                <span className="text-[11px] text-blue-700">Download CSV template to bulk-add members, then upload to auto-populate the table.</span>
+                <button className="ml-auto text-[11px] font-semibold text-blue-700 underline whitespace-nowrap">Download CSV</button>
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-border">
+                <table className="w-full text-[11px]">
+                  <thead>
+                    <tr className="bg-surface border-b border-border">
+                      <th className="text-left px-3 py-2 font-semibold text-text-secondary">#</th>
+                      <th className="text-left px-3 py-2 font-semibold text-text-secondary">Name</th>
+                      <th className="text-left px-3 py-2 font-semibold text-text-secondary">Mobile</th>
+                      <th className="text-left px-3 py-2 font-semibold text-text-secondary">Email</th>
+                      <th className="text-left px-3 py-2 font-semibold text-text-secondary">ID Type</th>
+                      <th className="text-left px-3 py-2 font-semibold text-text-secondary">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: memberCount }, (_, i) => (
+                      <tr key={i} className="border-b border-border last:border-0 hover:bg-surface/50">
+                        <td className="px-3 py-2 text-text-muted">{i + 1}</td>
+                        <td className="px-3 py-2 text-text-muted italic">Member {i + 1}</td>
+                        <td className="px-3 py-2 text-text-muted">—</td>
+                        <td className="px-3 py-2 text-text-muted">—</td>
+                        <td className="px-3 py-2 text-text-muted">—</td>
+                        <td className="px-3 py-2">
+                          <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">Pending</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border-2 border-dashed border-teal-300 text-teal-700 text-[12px] font-medium hover:bg-teal-50 transition-colors">
+                <UserPlus size={14} /> Add Member Manually
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-3 border-t border-border bg-surface/50 flex items-center justify-between">
+          <p className="text-[11px] text-text-muted">This is a preview simulation — no data is saved</p>
+          <button onClick={onClose} className="px-4 py-2 text-[13px] font-medium text-text-secondary border border-border rounded-lg hover:bg-surface transition-colors">
+            Close Preview
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── QR & Badge Config Panel ──────────────────────────────────────────────────
+
+function GroupQRBadgePanel() {
+  const [qrMode, setQrMode] = useState<'master' | 'individual'>('master');
+  const [badgeMode, setBadgeMode] = useState<'group' | 'individual'>('group');
+
+  return (
+    <div className="mx-4 mb-4 rounded-xl border border-teal-200 bg-teal-50/40 overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-teal-100 bg-teal-50">
+        <QrCode size={14} className="text-teal-700" />
+        <span className="text-[12px] font-semibold text-teal-800">QR Code & Badge Generation</span>
+        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-teal-200 text-teal-800">Group Only</span>
+      </div>
+      <div className="p-4 space-y-4">
+        {/* QR Code */}
+        <div>
+          <p className="text-[11px] font-semibold text-text-secondary mb-2 flex items-center gap-1.5">
+            <QrCode size={12} className="text-teal-600" /> QR Code Generation
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setQrMode('master')}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 text-center transition-all ${qrMode === 'master' ? 'border-teal-500 bg-teal-50' : 'border-border bg-white hover:border-teal-200'}`}
+            >
+              <QrCode size={18} className={qrMode === 'master' ? 'text-teal-600' : 'text-text-muted'} />
+              <span className={`text-[11px] font-semibold ${qrMode === 'master' ? 'text-teal-700' : 'text-text-secondary'}`}>One Master QR</span>
+              <span className="text-[10px] text-text-muted">Entire group</span>
+            </button>
+            <button
+              onClick={() => setQrMode('individual')}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 text-center transition-all ${qrMode === 'individual' ? 'border-teal-500 bg-teal-50' : 'border-border bg-white hover:border-teal-200'}`}
+            >
+              <LayoutList size={18} className={qrMode === 'individual' ? 'text-teal-600' : 'text-text-muted'} />
+              <span className={`text-[11px] font-semibold ${qrMode === 'individual' ? 'text-teal-700' : 'text-text-secondary'}`}>Individual QR</span>
+              <span className="text-[10px] text-text-muted">Per member</span>
+            </button>
+          </div>
+        </div>
+        {/* Badge Printing */}
+        <div>
+          <p className="text-[11px] font-semibold text-text-secondary mb-2 flex items-center gap-1.5">
+            <Printer size={12} className="text-teal-600" /> Badge Printing
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setBadgeMode('group')}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 text-center transition-all ${badgeMode === 'group' ? 'border-teal-500 bg-teal-50' : 'border-border bg-white hover:border-teal-200'}`}
+            >
+              <BadgeCheck size={18} className={badgeMode === 'group' ? 'text-teal-600' : 'text-text-muted'} />
+              <span className={`text-[11px] font-semibold ${badgeMode === 'group' ? 'text-teal-700' : 'text-text-secondary'}`}>Group Badge</span>
+              <span className="text-[10px] text-text-muted">Single badge</span>
+            </button>
+            <button
+              onClick={() => setBadgeMode('individual')}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 text-center transition-all ${badgeMode === 'individual' ? 'border-teal-500 bg-teal-50' : 'border-border bg-white hover:border-teal-200'}`}
+            >
+              <Printer size={18} className={badgeMode === 'individual' ? 'text-teal-600' : 'text-text-muted'} />
+              <span className={`text-[11px] font-semibold ${badgeMode === 'individual' ? 'text-teal-700' : 'text-text-secondary'}`}>Individual Badges</span>
+              <span className="text-[10px] text-text-muted">Per member</span>
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 px-3 py-2 bg-teal-100/60 rounded-lg">
+          <CheckCircle size={12} className="text-teal-600 shrink-0" />
+          <p className="text-[10px] text-teal-700">
+            {qrMode === 'master' ? 'One master QR' : 'Individual QRs'} + {badgeMode === 'group' ? 'group badge' : 'individual badges'} will be generated on publish.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function WorkflowBuilderPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const visitorType = searchParams.get('visitorType') ?? 'Vendor';
+  const isGroupVisit = visitorType === 'Group Visit';
 
   const [steps, setSteps] = useState<WorkflowStep[]>(() => visitorTypeSteps[visitorType] ?? defaultSteps);
   const [selectedField, setSelectedField] = useState<{ stepId: string; fieldId: string } | null>(null);
@@ -580,13 +1000,19 @@ export default function WorkflowBuilderPage() {
   const [draggingCanvasField, setDraggingCanvasField] = useState<{ stepId: string; fieldId: string; index: number } | null>(null);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [showPublishedToast, setShowPublishedToast] = useState(false);
+  const [showGroupPreview, setShowGroupPreview] = useState(false);
 
   const getFieldProps = useCallback((stepId: string, fieldId: string): FieldProperties => {
     const key = `${stepId}:${fieldId}`;
     if (fieldProperties[key]) return fieldProperties[key];
     const step = steps.find(s => s.id === stepId);
     const field = step?.fields.find(f => f.id === fieldId);
-    return { fieldId, stepId, label: field?.label ?? '', placeholder: '', defaultValue: '', mandatory: field?.mandatory ?? false, visibleToHost: field?.visibleToHost ?? true, visibleToVisitor: field?.visibleToVisitor ?? true };
+    return {
+      fieldId, stepId, label: field?.label ?? '', placeholder: '', defaultValue: '',
+      mandatory: field?.mandatory ?? false, visibleToHost: field?.visibleToHost ?? true,
+      visibleToVisitor: field?.visibleToVisitor ?? true,
+      groupScope: (field as CanvasField)?.groupScope,
+    };
   }, [fieldProperties, steps]);
 
   const updateFieldProps = (stepId: string, fieldId: string, patch: Partial<FieldProperties>) => {
@@ -596,15 +1022,33 @@ export default function WorkflowBuilderPage() {
     setFieldProperties(prev => ({ ...prev, [key]: updated }));
     setSteps(prev => prev.map(s => s.id !== stepId ? s : {
       ...s,
-      fields: s.fields.map(f => f.id !== fieldId ? f : { ...f, mandatory: updated.mandatory, visibleToHost: updated.visibleToHost, visibleToVisitor: updated.visibleToVisitor, label: updated.label }),
+      fields: s.fields.map(f => f.id !== fieldId ? f : {
+        ...f,
+        mandatory: updated.mandatory,
+        visibleToHost: updated.visibleToHost,
+        visibleToVisitor: updated.visibleToVisitor,
+        label: updated.label,
+        groupScope: updated.groupScope,
+      }),
     }));
   };
 
   const toggleCategory = (catId: string) => setCollapsedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
   const toggleStep = (stepId: string) => setSteps(prev => prev.map(s => s.id === stepId ? { ...s, collapsed: !s.collapsed } : s));
 
+  const toggleStepGroupApplyTo = (stepId: string) => {
+    setSteps(prev => prev.map(s => s.id !== stepId ? s : {
+      ...s,
+      groupApplyTo: s.groupApplyTo === 'all_members' ? 'leader' : 'all_members',
+    }));
+  };
+
   const addStep = () => {
-    const newStep: WorkflowStep = { id: `step-${Date.now()}`, number: steps.length + 1, title: `New Step ${steps.length + 1}`, color: '#405189', collapsed: false, conditionRules: [], fields: [] };
+    const newStep: WorkflowStep = {
+      id: `step-${Date.now()}`, number: steps.length + 1, title: `New Step ${steps.length + 1}`,
+      color: '#405189', collapsed: false, conditionRules: [], fields: [],
+      groupApplyTo: isGroupVisit ? 'leader' : undefined,
+    };
     setSteps(prev => [...prev, newStep]);
   };
 
@@ -651,8 +1095,17 @@ export default function WorkflowBuilderPage() {
         'vehicle-number': <Hash size={14} />, 'host-name': <User size={14} />, 'purpose-of-visit': <FileText size={14} />,
         'health-declaration': <Shield size={14} />, 'nda-terms': <Clipboard size={14} />, 'expected-duration': <Calendar size={14} />,
         'text-input': <Type size={14} />, 'dropdown': <List size={14} />, 'rating': <Star size={14} />, 'toggle-field': <ToggleLeft size={14} />,
+        'group-name': <UsersRound size={14} />, 'group-size': <Hash size={14} />, 'group-leader-name': <UserCog size={14} />,
+        'group-leader-mobile': <Phone size={14} />, 'group-leader-email': <Mail size={14} />, 'group-purpose': <FileText size={14} />,
+        'group-members': <Table2 size={14} />,
       };
-      const newField: CanvasField = { id: `cf-${Date.now()}`, paletteId: draggingPaletteField.id, label: draggingPaletteField.label, icon: iconMap[draggingPaletteField.id] ?? <FileText size={14} />, mandatory: false, visibleToHost: true, visibleToVisitor: true };
+      const newField: CanvasField = {
+        id: `cf-${Date.now()}`, paletteId: draggingPaletteField.id, label: draggingPaletteField.label,
+        icon: iconMap[draggingPaletteField.id] ?? <FileText size={14} />, mandatory: false,
+        visibleToHost: true, visibleToVisitor: true,
+        isGroupField: draggingPaletteField.isGroupField,
+        groupScope: draggingPaletteField.isGroupField ? 'group_level' : undefined,
+      };
       setSteps(prev => prev.map(s => {
         if (s.id !== targetStepId) return s;
         const newFields = [...s.fields];
@@ -684,6 +1137,9 @@ export default function WorkflowBuilderPage() {
   };
 
   const selectedProps = selectedField ? getFieldProps(selectedField.stepId, selectedField.fieldId) : null;
+  const selectedCanvasField = selectedField
+    ? steps.find(s => s.id === selectedField.stepId)?.fields.find(f => f.id === selectedField.fieldId)
+    : null;
 
   return (
     <div className="flex flex-col h-full bg-surface overflow-hidden">
@@ -695,10 +1151,16 @@ export default function WorkflowBuilderPage() {
           </button>
           <div className="flex items-center gap-2">
             <h1 className="text-[15px] font-semibold text-text-primary">{visitorTypeWorkflowTitle[visitorType] ?? 'Workflow Builder'}</h1>
+            {/* Group Visit Badge */}
+            {isGroupVisit && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                <UsersRound size={11} /> Group Visit
+              </span>
+            )}
             <Settings size={14} className="text-text-muted cursor-pointer hover:text-text-secondary" />
           </div>
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-            workflowStatus === 'active' ?'bg-green-50 text-green-700 border-green-100' :'bg-amber-50 text-amber-700 border-amber-100'
+            workflowStatus === 'active' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-amber-50 text-amber-700 border-amber-100'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full inline-block ${workflowStatus === 'active' ? 'bg-green-500' : 'bg-amber-400'}`} />
             {workflowStatus === 'active' ? 'ACTIVE' : 'DRAFT'}
@@ -711,11 +1173,20 @@ export default function WorkflowBuilderPage() {
               <Users size={13} className="text-text-muted" />
               Visitor Type:
             </span>
-            <span className="px-3 py-1.5 rounded-lg border border-border bg-surface text-[13px] font-medium text-text-primary">
+            <span className={`px-3 py-1.5 rounded-lg border text-[13px] font-medium ${isGroupVisit ? 'border-teal-200 bg-teal-50 text-teal-800' : 'border-border bg-white text-text-primary'}`}>
               {visitorType}
             </span>
           </div>
           <div className="h-5 w-px bg-border" />
+          {/* Preview as Visitor */}
+          <button
+            onClick={() => isGroupVisit ? setShowGroupPreview(true) : undefined}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-[13px] font-medium transition-colors ${isGroupVisit ? 'border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100' : 'border-border bg-white text-text-secondary hover:bg-surface cursor-default opacity-60'}`}
+            title={isGroupVisit ? 'Preview group visitor flow' : 'Preview as Visitor'}
+          >
+            <Eye size={14} />
+            Preview as Visitor
+          </button>
           <button
             onClick={handleSaveDraft}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-border bg-white text-[13px] font-medium text-text-primary hover:bg-surface hover:border-primary-300 transition-colors"
@@ -752,6 +1223,13 @@ export default function WorkflowBuilderPage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto scrollbar-thin py-2">
+            {/* Group Details Section — only for Group Visit */}
+            {isGroupVisit && (
+              <GroupDetailsPalette
+                onDragStart={(e, field) => handlePaletteDragStart(e, field)}
+                onDragEnd={handlePaletteDragEnd}
+              />
+            )}
             {filteredCategories.map(cat => (
               <div key={cat.id} className="mb-1">
                 <button onClick={() => toggleCategory(cat.id)} className="w-full flex items-center justify-between px-4 py-2 hover:bg-surface transition-colors">
@@ -797,12 +1275,25 @@ export default function WorkflowBuilderPage() {
               Add Step
             </button>
           </div>
+
+          {/* Group Visit info banner */}
+          {isGroupVisit && (
+            <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-teal-50 border border-teal-200">
+              <UsersRound size={15} className="text-teal-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[12px] font-semibold text-teal-800">Group Visit Mode Active</p>
+                <p className="text-[11px] text-teal-700 mt-0.5">Each step has a toggle to apply it to the <strong>Group Leader only</strong> or <strong>All Members</strong>. Fields show scope badges. Group-specific fields are highlighted in teal.</p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2 mt-4">
             {steps.map((step, stepIdx) => (
               <React.Fragment key={step.id}>
                 <StepCard
                   step={step}
                   isActive={selectedField?.stepId === step.id}
+                  isGroupVisit={isGroupVisit}
                   dragOverStep={dragOverStep}
                   dragOverIndex={dragOverIndex}
                   draggingCanvasField={draggingCanvasField}
@@ -815,6 +1306,7 @@ export default function WorkflowBuilderPage() {
                   onDragLeave={() => { setDragOverStep(null); setDragOverIndex(null); }}
                   onCanvasDragStart={(e, fieldId, idx) => handleCanvasDragStart(e, step.id, fieldId, idx)}
                   onCanvasDragEnd={handleCanvasDragEnd}
+                  onToggleGroupApplyTo={() => toggleStepGroupApplyTo(step.id)}
                 />
                 {stepIdx < steps.length - 1 && (
                   <div className="flex justify-center">
@@ -880,6 +1372,61 @@ export default function WorkflowBuilderPage() {
                 <p className="text-[10px] text-text-muted mt-1">Auto-filled from previous visit if return visitor matches</p>
               </div>
               <div className="h-px bg-border" />
+
+              {/* Group-specific: Field Applies To */}
+              {isGroupVisit && (
+                <>
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <UsersRound size={13} className="text-teal-600" />
+                      <h3 className="text-[12px] font-semibold text-text-primary">This field applies to</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      {([
+                        { value: 'leader', label: 'Group Leader only', icon: <UserCog size={12} />, color: 'amber' },
+                        { value: 'all_members', label: 'All Group Members', icon: <Users size={12} />, color: 'teal' },
+                        { value: 'group_level', label: 'Group Level (shared)', icon: <UsersRound size={12} />, color: 'purple' },
+                      ] as const).map(opt => (
+                        <div key={opt.value} className="flex items-center justify-between">
+                          <span className="text-[11px] text-text-secondary">{opt.label}</span>
+                          <div className={`w-8 h-4 rounded-full flex items-center px-0.5 transition-colors ${selectedProps.groupScope === opt.value ? opt.color === 'amber' ? 'bg-amber-500' : opt.color === 'teal' ? 'bg-teal-500' : 'bg-purple-500' : 'bg-gray-200'}`}>
+                            <div className={`w-3 h-3 rounded-full bg-white shadow transition-transform ${selectedProps.groupScope === opt.value ? opt.color === 'amber' ? 'translate-x-4' : opt.color === 'teal' ? 'translate-x-4' : 'translate-x-4' : 'translate-x-0'}`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Group Members field config */}
+                  {selectedCanvasField?.paletteId === 'group-members' && (
+                    <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3">
+                      <p className="text-[11px] font-semibold text-teal-800 mb-2 flex items-center gap-1.5">
+                        <Table2 size={12} /> Member Fields Configuration
+                      </p>
+                      <div className="space-y-1.5">
+                        {[
+                          { label: 'Name', checked: true },
+                          { label: 'Mobile', checked: true },
+                          { label: 'Email', checked: true },
+                          { label: 'ID Type & Number', checked: true },
+                          { label: 'Live Photo', checked: false },
+                          { label: 'Custom Field', checked: false },
+                        ].map(mf => (
+                          <div key={mf.label} className="flex items-center justify-between">
+                            <span className="text-[11px] text-text-secondary">{mf.label}</span>
+                            <div className={`w-8 h-4 rounded-full flex items-center px-0.5 transition-colors ${mf.checked ? 'bg-teal-500' : 'bg-gray-200'}`}>
+                              <div className={`w-3 h-3 rounded-full bg-white shadow transition-transform ${mf.checked ? 'translate-x-4' : 'translate-x-0'}`} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-teal-600 mt-2">These fields will appear in the repeatable member table and CSV template.</p>
+                    </div>
+                  )}
+                  <div className="h-px bg-border" />
+                </>
+              )}
+
               <div>
                 <div className="flex items-center gap-1.5 mb-3">
                   <Eye size={13} className="text-text-secondary" />
@@ -933,6 +1480,9 @@ export default function WorkflowBuilderPage() {
               <p className="text-[11px] text-text-muted">Click any field on the canvas to edit its properties</p>
             </div>
           )}
+
+          {/* QR & Badge Panel — only for Group Visit, shown at bottom of right panel */}
+          {isGroupVisit && !selectedField && <GroupQRBadgePanel />}
         </div>
       </div>
 
@@ -949,6 +1499,9 @@ export default function WorkflowBuilderPage() {
           Workflow published — status set to Active
         </div>
       )}
+
+      {/* ── Group Preview Modal ── */}
+      {showGroupPreview && <GroupPreviewModal onClose={() => setShowGroupPreview(false)} />}
     </div>
   );
 }
